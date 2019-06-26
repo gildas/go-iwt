@@ -1,6 +1,7 @@
 package iwt
 
 import (
+	"math"
 	"context"
 	"bytes"
 	"encoding/json"
@@ -99,10 +100,6 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	start    := time.Now()
 	res, err := httpclient.Do(req)
 	duration := time.Since(start)
-	resRequestID := res.Header.Get("X-Request-Id")
-	if resRequestID != options.RequestID {
-		log = log.Record("duration", duration.Seconds()).Record("resreqid", resRequestID)
-	}
 	if err != nil {
 		log.Errorf("Failed to send request", err)
 		return nil, err
@@ -118,7 +115,12 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	log.Debugf("Response %s in %s", res.Status, duration)
 	log.Tracef("Response Headers: %#v", res.Header)
 	// TODO: Cap this! as the body can be really big and the log will suffer a great deal!
-	log.Tracef("Response body (%d bytes): %s", len(resBody), string(resBody))
+	log.Tracef("Response body (%d bytes): %s", len(resBody), string(resBody[:int(math.Min(512,float64(len(resBody))))]))
+
+	resRequestID := res.Header.Get("X-Request-Id")
+	if resRequestID != options.RequestID {
+		log = log.Record("duration", duration.Seconds()).Record("resreqid", resRequestID)
+	}
 
 	// Processing the response
 	// TODO: Process redirections (3xx)

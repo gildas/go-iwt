@@ -67,7 +67,7 @@ func (suite *IWTTestSuite) TestFailsQueryUnsupportedQueueType() {
 	suite.Assert().Equal("error.websvc.unknownEntity.invalidQueueType", err.Error())
 }
 
-func (suite *IWTTestSuite) TestCanStartChat() {
+func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 	chat, err := suite.Client.StartChat(iwt.StartChatOptions{
 		QueueName: "Line",
 		Participant: iwt.Participant{Name: "UnitTest"},
@@ -76,6 +76,9 @@ func (suite *IWTTestSuite) TestCanStartChat() {
 	suite.Require().NotNil(chat, "Chat is nil")
 	suite.Assert().NotEmpty(chat.ID, "Chat Identifier is empty")
 	suite.Client.Logger.Infof("Chat: %#v", chat)
+
+	err = suite.Client.StopChat(chat)
+	suite.Require().Nil(err, "Failed to stop a chat, Error: %s", err)
 }
 
 func (suite *IWTTestSuite) SetupSuite() {
