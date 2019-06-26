@@ -4,13 +4,6 @@ import (
 	"fmt"
 )
 
-type Participant struct {
-	ID          string `json:"participantID,omitempty"`
-	Name        string `json:"name"`
-	Credentials string `json:"credentials,omitempty"`
-	State       string `json:"state,omitempty"`
-}
-
 type Status struct {
 	Type   string `json:"type"`
 	Reason string `json:"reason"`
