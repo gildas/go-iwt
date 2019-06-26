@@ -78,5 +78,5 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		DateFormat:         results.Chat.DateFormat,
 		TimeFormat:         results.Chat.TimeFormat,
 	}
-	return &chat, nil
+	return &chat, results.Chat.Status.AsError()
 }

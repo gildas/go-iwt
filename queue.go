@@ -4,11 +4,6 @@ import (
 	"fmt"
 )
 
-type Status struct {
-	Type   string `json:"type"`
-	Reason string `json:"reason"`
-}
-
 // Queue describe a queue
 type Queue struct {
 	Name               string `json:"queueName"`
@@ -46,8 +41,5 @@ func (client *Client) QueryQueue(queuename, queuetype string) (*Queue, error) {
 	}
 	results.Queue.Name = queuename
 	results.Queue.Type = queuetype
-	if results.Queue.Status.Type != "success" {
-		return nil, fmt.Errorf(results.Queue.Status.Reason)
-	}
-	return &results.Queue, nil
+	return &results.Queue, results.Queue.Status.AsError()
 }
