@@ -14,6 +14,7 @@ type Chat struct {
 	Language           string        `json:"language"`
 	DateFormat         string        `json:"dateFormat"`
 	TimeFormat         string        `json:"timeFormat"`
+	Client             *Client       `json:"-"`
 }
 
 func (chat *Chat) String() string {
@@ -78,17 +79,18 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		Language:           options.Language,
 		DateFormat:         results.Chat.DateFormat,
 		TimeFormat:         results.Chat.TimeFormat,
+		Client:             client,
 	}
 	return &chat, results.Chat.Status.AsError()
 }
 
-// StopChat stops an active chat
-func (client *Client) StopChat(chat *Chat) error {
-	if chat == nil || len(chat.ID) == 0 {
+// Stop stops the current chat
+func (chat *Chat) Stop() error {
+	if len(chat.ID) == 0 {
 		return nil
 	}
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := client.sendRequest(client.Context, &requestOptions{
+	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/exit/" + chat.ID,
 	}, &results)
