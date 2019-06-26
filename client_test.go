@@ -45,11 +45,30 @@ func (suite *IWTTestSuite) TestCanFetchServerConfiguration() {
 	suite.Assert().Contains(chatCaps, "poll")
 	suite.Assert().Contains(chatCaps, "sendMessage")
 	suite.Assert().Contains(chatCaps, "exit")
-	suite.Client.Logger.Infof("Configuration : %#v", config)
+	suite.Client.Logger.Infof("Configuration: %#v", config)
+}
+
+func (suite *IWTTestSuite) TestCanQueryQueue() {
+	queue, err := suite.Client.QueryQueue("Line", "Workgroup")
+	suite.Require().Nil(err, "Failed to query queue, Error: %s", err)
+	suite.Client.Logger.Infof("Queue: %#v", queue)
+}
+
+func (suite *IWTTestSuite) TestFailsQueryUnknownQueue() {
+	queue, err := suite.Client.QueryQueue("UnknownQueue", "Workgroup")
+	suite.Require().NotNil(err)
+	suite.Assert().Equal("error.websvc.unknownEntity.invalidQueue", err.Error())
+	suite.Client.Logger.Infof("Queue: %#v", queue)
+}
+
+func (suite *IWTTestSuite) TestFailsQueryUnsupportedQueueType() {
+	_, err := suite.Client.QueryQueue("Line", "UnknownType")
+	suite.Require().NotNil(err)
+	suite.Assert().Equal("error.websvc.unknownEntity.invalidQueueType", err.Error())
 }
 
 func (suite *IWTTestSuite) SetupSuite() {
-	suite.Name   = "IWT"
+	suite.Name = "IWT"
 	suite.Logger = CreateLogger(fmt.Sprintf("test-%s.log", strings.ToLower(suite.Name)))
 
 	primaryAPI, err := url.Parse(core.GetEnvAsString("PRIMARY", ""))
