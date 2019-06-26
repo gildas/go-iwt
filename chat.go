@@ -1,6 +1,7 @@
 package iwt
 
 import (
+	"net/http"
 	"fmt"
 	"time"
 )
@@ -79,4 +80,22 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		TimeFormat:         results.Chat.TimeFormat,
 	}
 	return &chat, results.Chat.Status.AsError()
+}
+
+// StopChat stops an active chat
+func (client *Client) StopChat(chat *Chat) error {
+	if chat == nil {
+		return nil
+	}
+	results := struct{Status Status `json:"status"`}{}
+	_, err := client.sendRequest(client.Context, &requestOptions{
+		Method: http.MethodPost,
+		Path:   "/chat/exit/" + chat.ID,
+	}, &results)
+	if err != nil {
+		return err
+	}
+	// If status.reason == "error.websvc.unknownEntity.session" the chat is already stopped. Should we make it an error or not?
+	// we emit chatstoppedevent on the chan whatever happened
+	return results.Status.AsError()
 }
