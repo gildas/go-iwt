@@ -39,7 +39,7 @@ type RoutingContext struct {
 	Context  string `json:"context"`
 }
 
-type startChatResults struct {
+type chatResponse struct {
 	ID                 string `json:"chatID"`
 	ParticipantID      string `json:"participantID"`
 	PollWaitSuggestion int    `json:"pollWaitSuggestion"` // in ms => time.Duration
@@ -63,7 +63,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		return nil, fmt.Errorf("error.websvc.unknownEntity.invalidQueueType")
 	}
 
-	results := struct{Chat startChatResults `json:"chat"`}{}
+	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, err := client.sendRequest(client.Context, &requestOptions{
 		Path:    "/chat/start",
 		Payload: options,
@@ -84,10 +84,10 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 
 // StopChat stops an active chat
 func (client *Client) StopChat(chat *Chat) error {
-	if chat == nil {
+	if chat == nil || len(chat.ID) == 0 {
 		return nil
 	}
-	results := struct{Status Status `json:"status"`}{}
+	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, err := client.sendRequest(client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/exit/" + chat.ID,
@@ -95,7 +95,10 @@ func (client *Client) StopChat(chat *Chat) error {
 	if err != nil {
 		return err
 	}
-	// If status.reason == "error.websvc.unknownEntity.session" the chat is already stopped. Should we make it an error or not?
-	// we emit chatstoppedevent on the chan whatever happened
-	return results.Status.AsError()
+	// TODO: we emit chatstoppedevent on the chan whatever happened
+	if results.Chat.Status.IsOK() || results.Chat.Status.IsA(StatusUnknownEntitySession) {
+		chat.ID = ""
+		return nil
+	}
+	return results.Chat.Status.AsError()
 }
