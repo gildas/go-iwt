@@ -81,6 +81,8 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		TimeFormat:         results.Chat.TimeFormat,
 		Client:             client,
 	}
+	// Start the polling go subroutine
+	// return a chan that will receive Event objects (TBD)
 	return &chat, results.Chat.Status.AsError()
 }
 
