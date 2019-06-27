@@ -104,3 +104,31 @@ func (chat *Chat) Stop() error {
 	}
 	return results.Chat.Status.AsError()
 }
+
+// SendMessage sends a message to the chat
+func (chat *Chat) SendMessage(text, contentType string) error {
+	if len(chat.ID) == 0 {
+		return nil
+	}
+	if len(contentType) == 0 {
+		contentType = "text/plain"
+	}
+	results := struct{Chat chatResponse `json:"chat"`}{}
+	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+		Method: http.MethodPost,
+		Path:   "/chat/sendMessage/" + chat.ID,
+		Payload: struct {
+			Message     string `json:"message"`
+			ContentType string `json:"contentType"`
+		}{text, contentType},
+	}, &results)
+	if err != nil {
+		return err
+	}
+	// TODO: we emit chatstoppedevent on the chan whatever happened
+	if results.Chat.Status.IsOK() || results.Chat.Status.IsA(StatusUnknownEntitySession) {
+		chat.ID = ""
+		return nil
+	}
+	return results.Chat.Status.AsError()
+}
