@@ -34,7 +34,7 @@ type requestOptions struct {
 }
 
 // sendRequest sends an HTTP request to Box.com's API
-func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (result io.ReadCloser, err error) {
+func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (reader io.ReadCloser, contentType string, err error) {
 	if len(options.RequestID) == 0 {
 		options.RequestID = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -43,7 +43,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	// Building the request body
 	reqContent, reqContentSize, err := client.buildReqContent(log, options)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	// Sanitizing the given options
@@ -68,11 +68,11 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 		endpoint, err = url.Parse(client.CurrentAPIEndpoint().String() + options.Path)
 	}
 	if err != nil {
-		return nil, err
+		return
 	}
 	req, err := http.NewRequest(options.Method, endpoint.String(), reqContent)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	// Setting request headers
@@ -102,7 +102,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	duration := time.Since(start)
 	if err != nil {
 		log.Errorf("Failed to send request", err)
-		return nil, err
+		return
 	}
 	defer res.Body.Close()
 
@@ -127,7 +127,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	if res.StatusCode == http.StatusFound {
 		locationURL, err := res.Location()
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		log.Infof("We should get stuff from %s", locationURL)
 	}
@@ -136,17 +136,17 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 		//if err = json.Unmarshal(resBody, &requestError); err == nil {
 		//	return nil, requestError
 		//}
-		return nil, fmt.Errorf("%s", res.Status)
+		return nil, "", fmt.Errorf("%s", res.Status)
 	}
 
 	if results != nil {
 		err = json.Unmarshal(resBody, results)
 		if err != nil {
 			log.Errorf("Failed to decode response", err)
-			return nil, err
+			return
 		}
 	}
-	return ioutil.NopCloser(bytes.NewReader(resBody)), nil
+	return ioutil.NopCloser(bytes.NewReader(resBody)), res.Header.Get("Content-Type"), nil
 }
 
 // buildReqContent build the request body

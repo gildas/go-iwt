@@ -63,7 +63,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 
 	log.Debugf("Starting a Chat in %s", queue)
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := client.sendRequest(client.Context, &requestOptions{
+	_, _, err := client.sendRequest(client.Context, &requestOptions{
 		Path:    "/chat/start",
 		Payload: options,
 	}, &results)
@@ -97,7 +97,7 @@ func (chat *Chat) Stop() error {
 
 	log.Debugf("Stopping chat...")
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/exit/" + chat.ID,
 	}, &results)
@@ -126,7 +126,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 
 	log.Debugf("Sending %s message...", contentType)
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/sendMessage/" + chat.ID,
 		Payload: struct {

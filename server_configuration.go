@@ -13,7 +13,7 @@ type ServerConfiguration struct {
 // GetServerConfiguration fetches the configuration of the PureConnect server
 func (client *Client) GetServerConfiguration() (*ServerConfiguration, error) {
 	results := []struct{Config ServerConfiguration `json:"serverConfiguration"`}{}
-	_, err := client.sendRequest(client.Context, &requestOptions{Path: "/serverConfiguration" }, &results)
+	_, _, err := client.sendRequest(client.Context, &requestOptions{Path: "/serverConfiguration" }, &results)
 	if err != nil {
 		return nil, err
 	}
