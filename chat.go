@@ -1,6 +1,7 @@
 package iwt
 
 import (
+	"io"
 	"net/http"
 	"time"
 
@@ -142,10 +143,21 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 }
 
 // GetFile download a file sent by an agent
-func (chat *Chat) GetFile(filepath string) error {
+func (chat *Chat) GetFile(filepath string) (contentType string, reader io.ReadCloser, err error) {
 	log := chat.Logger.Scope("stop")
 	if len(chat.ID) == 0 {
-		log.Warnf("chat is not connected")
-		return nil
+		log.Errorf("chat is not connected")
+		return "", nil, StatusNotConnectedEntity
 	}
+
+	log.Debugf("Rquesting file...")
+	reader, contentType, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+		Path:   "/chat/sendMessage/" + chat.ID,
+		Accept: "application/octet-stream",
+	}, nil)
+	if err != nil {
+		log.Errorf("Failed to send /chat/sendMessage request", err)
+		return
+	}
+	return
 }
