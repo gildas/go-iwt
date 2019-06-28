@@ -128,7 +128,9 @@ func (chat *Chat) Reconnect() error {
 	log := chat.Logger.Scope("reconnect")
 
 	// TODO: stop polling
-	log.Debugf("Reconnecting chat...")
+	chat.stopPollingMessages()
+	chat.Client.NextAPIEndpoint()
+	log.Debugf("Reconnecting chat to %s...", chat.Client.CurrentAPIEndpoint())
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method:  http.MethodPost,
@@ -139,8 +141,8 @@ func (chat *Chat) Reconnect() error {
 		log.Errorf("Failed to send /chat/exit request", err)
 		return err
 	}
-	// TODO: resume polling (if status is failure, chat will be destroyed as part of the normal process)
-	// TODO: process events from results
+	chat.processEvents(results.Chat.Events)
+	chat.startPollingMessages()
 	return results.Chat.Status.Param("id", chat.ID).AsError()
 }
 
@@ -224,9 +226,8 @@ func (chat *Chat) startPollingMessages() {
 					_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 						Path: "/chat/poll/"+chat.Participants[0].ID,
 					}, &results)
-					if err == StatusUnavailableService.AsError() {
+					if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
 						log.Warnf("A Switchover happened!")
-						chat.stopPollingMessages()
 						chat.Reconnect()
 						continue
 					}

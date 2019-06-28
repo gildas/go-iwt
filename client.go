@@ -73,3 +73,14 @@ func NewClient(ctx context.Context, options ClientOptions) *Client {
 func (client Client) CurrentAPIEndpoint() *url.URL {
 	return client.APIEndpoints[client.EndPointIndex]
 }
+
+// NextAPIEndpoint switches to the next API endpoint (or back at the beginning)
+func (client *Client) NextAPIEndpoint() *url.URL {
+	if len(client.APIEndpoints) > 1 {
+		client.EndPointIndex++
+		if client.EndPointIndex >= len(client.APIEndpoints) {
+			client.EndPointIndex = 0
+		}
+	}
+	return client.APIEndpoints[client.EndPointIndex]
+}
