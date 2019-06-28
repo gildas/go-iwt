@@ -171,7 +171,7 @@ func (chat *Chat) GetFile(filepath string) (contentType string, reader io.ReadCl
 		return "", nil, StatusNotConnectedEntity
 	}
 
-	log.Debugf("Rquesting file...")
+	log.Debugf("Requesting file...")
 	reader, contentType, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Path:   "/chat/sendMessage/" + chat.ID,
 		Accept: "application/octet-stream",
