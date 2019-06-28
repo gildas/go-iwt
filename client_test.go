@@ -62,7 +62,7 @@ func (suite *IWTTestSuite) TestFailsQueryUnknownQueue() {
 }
 
 func (suite *IWTTestSuite) TestCanStartAndStopChat() {
-	chat, err := suite.Client.StartChat(&iwt.StartChatOptions{
+	chat, err := suite.Client.StartChat(iwt.StartChatOptions{
 		QueueName:   "Line",
 		QueueType:   iwt.WorkgroupQueue,
 		Participant: iwt.Participant{Name: "UnitTest"},

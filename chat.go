@@ -59,7 +59,7 @@ type chatResponse struct {
 
 // StartChat starts a chat
 // Chat Events will be sent to Chat.EventChan
-func (client *Client) StartChat(options *StartChatOptions) (*Chat, error) {
+func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	log := client.Logger.Topic("chat").Scope("start").Child()
 
 	// Sanitizing options
