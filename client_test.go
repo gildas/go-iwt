@@ -72,6 +72,7 @@ func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 	suite.Assert().NotEmpty(chat.ID, "Chat Identifier is empty")
 	suite.Client.Logger.Infof("Chat: %#v", chat)
 
+	time.Sleep(5 * time.Second)
 	err = chat.Stop()
 	suite.Require().Nil(err, "Failed to stop a chat, Error: %s", err)
 }
