@@ -91,7 +91,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 func (chat *Chat) Stop() error {
 	log := chat.Logger.Scope("stop")
 
-	if len(chat.ID) == 0 {
+	if len(chat.ID) == 0 || len(chat.Participants) == 0 || len(chat.Participants[0].ID) == 0 {
 		log.Debugf("Chat is already stopped")
 		return nil
 	}
@@ -100,7 +100,7 @@ func (chat *Chat) Stop() error {
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
-		Path:   "/chat/exit/" + chat.ID,
+		Path:   "/chat/exit/" + chat.Participants[0].ID,
 	}, &results)
 	if err != nil {
 		log.Errorf("Failed to send /chat/exit request", err)
