@@ -17,6 +17,8 @@ type Chat struct {
 	Language           string         `json:"language"`
 	DateFormat         string         `json:"dateFormat"`
 	TimeFormat         string         `json:"timeFormat"`
+	EventChan          chan ChatEvent `json:"-"`
+	PollTicker         *time.Ticker   `json:"-"`
 	Client             *Client        `json:"-"`
 	Logger             *logger.Logger `json:"-"`
 }
@@ -45,16 +47,18 @@ type RoutingContext struct {
 }
 
 type chatResponse struct {
-	ID                 string `json:"chatID"`
-	ParticipantID      string `json:"participantID"`
-	PollWaitSuggestion int    `json:"pollWaitSuggestion"` // in ms => time.Duration
-	DateFormat         string `json:"dateFormat"`
-	TimeFormat         string `json:"timeFormat"`
-	Status             Status `json:"status"`
-	Version            int    `json:"cfgVer"`
+	ID                 string             `json:"chatID"`
+	ParticipantID      string             `json:"participantID"`
+	PollWaitSuggestion int                `json:"pollWaitSuggestion,omitempty"` // in ms => time.Duration
+	DateFormat         string             `json:"dateFormat,omitempty"`
+	TimeFormat         string             `json:"timeFormat,omitempty"`
+	Events             []ChatEventWrapper `json:"events"`
+	Status             Status             `json:"status"`
+	Version            int                `json:"cfgVer"`
 }
 
 // StartChat starts a chat
+// Chat Events will be sent to Chat.EventChan
 func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	log := client.Logger.Topic("chat").Scope("start").Child()
 
@@ -71,6 +75,9 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	if err != nil {
 		return nil, err
 	}
+	if results.Chat.PollWaitSuggestion < 1000 {
+		results.Chat.PollWaitSuggestion = 2000
+	}
 	chat := Chat{
 		ID:                 results.Chat.ID,
 		Queue:              queue,
@@ -79,11 +86,12 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		Language:           options.Language,
 		DateFormat:         results.Chat.DateFormat,
 		TimeFormat:         results.Chat.TimeFormat,
+		EventChan:          make(chan ChatEvent),
 		Client:             client,
 		Logger:             log.Record("chat", results.Chat.ID).Child(),
 	}
 	// Start the polling go subroutine
-	// return a chan that will receive Event objects (TBD)
+	chat.startPollingMessages()
 	return &chat, results.Chat.Status.AsError()
 }
 
@@ -106,6 +114,7 @@ func (chat *Chat) Stop() error {
 		log.Errorf("Failed to send /chat/exit request", err)
 		return err
 	}
+	chat.stopPollingMessages()
 	// TODO: we emit chatstoppedevent on the chan whatever happened
 	if results.Chat.Status.IsOK() || results.Chat.Status.IsA(StatusUnknownEntitySession) {
 		chat.ID = ""
@@ -160,6 +169,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 		log.Errorf("Failed to send /chat/sendMessage request", err)
 		return err
 	}
+	go chat.processEvents(results.Chat.Events)
 	return results.Chat.Status.Param("id", chat.ID).AsError()
 }
 
@@ -181,4 +191,82 @@ func (chat *Chat) GetFile(filepath string) (contentType string, reader io.ReadCl
 		return
 	}
 	return
+}
+
+func (chat *Chat) startPollingMessages() {
+	if chat.PollTicker != nil {
+		chat.stopPollingMessages()
+	}
+	chat.Logger.Scope("pollmessages").Infof("Polling messages every %s", chat.PollWaitSuggestion)
+	chat.PollTicker = time.NewTicker(chat.PollWaitSuggestion)
+
+	go func() {
+		log := chat.Logger.Scope("pollmessages").Child()
+		for {
+			select {
+			case now := <- chat.PollTicker.C:
+				log.Debugf("Polling messages at %s", now)
+				if len(chat.Participants) == 0 {
+					log.Infof("Chat has no participant...")
+					chat.stopPollingMessages()
+					chat.ID = ""
+					return
+				}
+				switch chat.Participants[0].State {
+				case "disconnected":
+					log.Infof("First participant disconnected, stopping chat")
+					// Emit ChatStoppedEvent (parm: chat.ID)
+					chat.stopPollingMessages()
+					chat.ID = ""
+					return
+				case "active":
+					results := struct{Chat chatResponse `json:"chat"`}{}
+					_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+						Path: "/chat/poll/"+chat.Participants[0].ID,
+					}, &results)
+					if err == StatusUnavailableService.AsError() {
+						log.Warnf("A Switchover happened!")
+						chat.stopPollingMessages()
+						chat.Reconnect()
+						continue
+					}
+					if err != nil {
+						log.Errorf("Failed to send /chat/poll request", err)
+						continue
+					}
+					if results.Chat.Status.IsA(StatusUnknownEntitySession) {
+						log.Warnf("Zombie Chat, stopping it")
+						chat.stopPollingMessages()
+						chat.ID = ""
+						return
+					}
+					if !results.Chat.Status.IsOK() {
+						log.Errorf("Results contains an error", results.Chat.Status.AsError())
+						continue
+					}
+					chat.processEvents(results.Chat.Events)
+				default:
+					log.Warnf("Unsupported state %s for participant %s (%s)", chat.Participants[0].State, chat.Participants[0].Name, chat.Participants[0].ID)
+				}
+			}
+		}
+	}()
+}
+
+func (chat *Chat) stopPollingMessages() {
+	if chat.PollTicker != nil {
+		chat.Logger.Scope("pollmessages").Debugf("stopping polling messages")
+		chat.PollTicker.Stop()
+		chat.Logger.Scope("pollmessages").Infof("stopped polling messages")
+	}
+	chat.PollTicker = nil
+}
+
+//TODO: Yuck
+func (chat *Chat) processEvents(events []ChatEventWrapper) {
+	log := chat.Logger.Scope("processevents").Child()
+
+	for _, event := range events {
+		log.Record("event", event).Debugf("Emitting Event %s...", event.Event.GetType())
+	}
 }
