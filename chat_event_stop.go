@@ -6,10 +6,7 @@ import (
 
 // StopEvent describes the Text event
 type StopEvent struct {
-	ParticipantID   string `json:"participantID"`
-	ParticipantName string `json:"displayName"`
-	SequenceNumber  int    `json:"sequenceNumber"`
-	ChatID          string `json:"chatID"`
+	ChatID string `json:"chatID"`
 }
 
 // GetType returns the type of this event

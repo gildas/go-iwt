@@ -115,7 +115,7 @@ func (chat *Chat) Stop() error {
 		return err
 	}
 	chat.stopPollingMessages()
-	// TODO: we emit chatstoppedevent on the chan whatever happened
+	chat.EventChan <- StopEvent{ChatID: chat.ID}
 	if results.Chat.Status.IsOK() || results.Chat.Status.IsA(StatusUnknownEntitySession) {
 		chat.ID = ""
 		return nil
@@ -127,7 +127,6 @@ func (chat *Chat) Stop() error {
 func (chat *Chat) Reconnect() error {
 	log := chat.Logger.Scope("reconnect")
 
-	// TODO: stop polling
 	chat.stopPollingMessages()
 	chat.Client.NextAPIEndpoint()
 	log.Debugf("Reconnecting chat to %s...", chat.Client.CurrentAPIEndpoint())
@@ -263,11 +262,11 @@ func (chat *Chat) stopPollingMessages() {
 	chat.PollTicker = nil
 }
 
-//TODO: Yuck
 func (chat *Chat) processEvents(events []ChatEventWrapper) {
 	log := chat.Logger.Scope("processevents").Child()
 
 	for _, event := range events {
 		log.Record("event", event).Debugf("Emitting Event %s...", event.Event.GetType())
+		chat.EventChan <- event.Event
 	}
 }
