@@ -15,6 +15,7 @@ type Status struct {
 var (
 	StatusUnknownEntitySession = Status{"failure", "error.websvc.unknownEntity.session", nil}
 	StatusNotConnectedEntity   = Status{"failure", "error.websvc.entity.notconnected",   nil}
+	StatusUnavailableService   = Status{"failure", "error.websvc.unavailable", nil}
 )
 
 // IsOK tells if the status is a success
