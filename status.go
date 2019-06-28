@@ -62,7 +62,7 @@ func (status Status) Error() string {
 			}
 			sb.WriteString(key)
 			sb.WriteString(": ")
-			sb.WriteString(fmt.Sprint("%v", value))
+			sb.WriteString(fmt.Sprintf("%v", value))
 		}
 		sb.WriteString(")")
 		return sb.String()
