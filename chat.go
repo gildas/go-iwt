@@ -76,7 +76,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		return nil, err
 	}
 	if results.Chat.PollWaitSuggestion < 1000 {
-		results.Chat.PollWaitSuggestion = 2000
+		results.Chat.PollWaitSuggestion = 1000
 	}
 	chat := Chat{
 		ID:                 results.Chat.ID,
