@@ -4,17 +4,21 @@ import (
 	"net/http"
 	"fmt"
 	"time"
+
+	"github.com/gildas/go-logger"
 )
 
 // Chat describes a live chat
 type Chat struct {
-	ID                 string        `json:"chatID"`
-	Participants       []Participant `json:"participants"`
-	PollWaitSuggestion time.Duration `json:"pollWaitSuggestion"`
-	Language           string        `json:"language"`
-	DateFormat         string        `json:"dateFormat"`
-	TimeFormat         string        `json:"timeFormat"`
-	Client             *Client       `json:"-"`
+	ID                 string         `json:"chatID"`
+	Queue              *Queue         `json:"queue"`
+	Participants       []Participant  `json:"participants"`
+	PollWaitSuggestion time.Duration  `json:"pollWaitSuggestion"`
+	Language           string         `json:"language"`
+	DateFormat         string         `json:"dateFormat"`
+	TimeFormat         string         `json:"timeFormat"`
+	Client             *Client        `json:"-"`
+	Logger             *logger.Logger `json:"-"`
 }
 
 func (chat *Chat) String() string {
@@ -29,7 +33,7 @@ type StartChatOptions struct {
 	EmailAddress          string            `json:"emailAddress,omitempty"`
 	Language              string            `json:"language,omitempty"`
 	QueueName             string            `json:"target"`
-	QueueType             string            `json:"targettype"`
+	QueueType             QueueType         `json:"targettype"`
 	Attributes            map[string]string `json:"attributes,omitempty"`
 	RoutingContexts       []RoutingContext  `json:"routingContexts,omitempty"`
 }
@@ -54,15 +58,7 @@ type chatResponse struct {
 func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	// Sanitizing options
 	options.SupportedContentTypes = "text/plain" // only supported types so far...
-	switch {
-	case len(options.QueueType) == 0:
-		options.QueueType = "Workgroup"
-	case options.QueueType == "Station":
-	case options.QueueType == "User":
-	case options.QueueType == "Workgroup":
-	default:
-		return nil, fmt.Errorf("error.websvc.unknownEntity.invalidQueueType")
-	}
+	queue := &Queue{Name: options.QueueName, Type: options.QueueType}
 
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, err := client.sendRequest(client.Context, &requestOptions{
@@ -74,6 +70,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	}
 	chat := Chat{
 		ID:                 results.Chat.ID,
+		Queue:              queue,
 		Participants:       []Participant{Participant{ID: results.Chat.ParticipantID, Name: options.Participant.Name, State: "active"}},
 		PollWaitSuggestion: time.Duration(results.Chat.PollWaitSuggestion) * time.Millisecond,
 		Language:           options.Language,
