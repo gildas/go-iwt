@@ -2,6 +2,7 @@ package iwt
 
 // Participant defines a chat participant
 type Participant struct {
+	Type        string `json:"participantType"`
 	ID          string `json:"participantID,omitempty"`
 	Name        string `json:"name"`
 	Credentials string `json:"credentials,omitempty"`
@@ -10,6 +11,11 @@ type Participant struct {
 	Status      Status `json:"status"`
 }
 
+var (
+	// SystemParticipant is used for messages sent by PureConnect
+	SystemParticipant = Participant{Type: "System", ID: "00000000-0000-0000-0000-000000000000", Name: "System", State: "active"}
+)
+
 // GetParticipant fetches a participant from a chat by its ID
 func (chat *Chat) GetParticipant(id string) (*Participant, error) {
 	log := chat.Logger.Scope("partyinfo")
@@ -17,6 +23,10 @@ func (chat *Chat) GetParticipant(id string) (*Participant, error) {
 	if len(chat.ID) == 0 || len(chat.Participants) == 0 || len(chat.Participants[0].ID) == 0 {
 		log.Errorf("chat is not connected")
 		return nil, StatusNotConnectedEntity
+	}
+
+	if id == SystemParticipant.ID {
+		return &SystemParticipant, nil
 	}
 
 	log.Debugf("Requesting party information...")
