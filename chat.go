@@ -114,6 +114,27 @@ func (chat *Chat) Stop() error {
 	return results.Chat.Status.AsError()
 }
 
+// Reconnect reconnects the current chat to another server (Switchover event, e.g.)
+func (chat *Chat) Reconnect() error {
+	log := chat.Logger.Scope("reconnect")
+
+	// TODO: stop polling
+	log.Debugf("Reconnecting chat...")
+	results := struct{Chat chatResponse `json:"chat"`}{}
+	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+		Method:  http.MethodPost,
+		Path:    "/chat/reconnect",
+		Payload: struct {ChatID string `json:"chatID"`}{chat.ID},
+	}, &results)
+	if err != nil {
+		log.Errorf("Failed to send /chat/exit request", err)
+		return err
+	}
+	// TODO: resume polling (if status is failure, chat will be destroyed as part of the normal process)
+	// TODO: process events from results
+	return results.Chat.Status.Param("id", chat.ID).AsError()
+}
+
 // SendMessage sends a message to the chat
 func (chat *Chat) SendMessage(text, contentType string) error {
 	log := chat.Logger.Scope("sendmessage")
