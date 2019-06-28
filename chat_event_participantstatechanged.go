@@ -1,6 +1,7 @@
 package iwt
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -19,4 +20,16 @@ func (event ParticipantStateChangedEvent) GetType() string {
 
 func (event ParticipantStateChangedEvent) String() string {
 	return fmt.Sprintf("Participant %s (%s) new state: %s", event.ParticipantName, event.ParticipantID, event.State)
+}
+
+// MarshalJSON encodes into JSON
+func (event ParticipantStateChangedEvent) MarshalJSON() ([]byte, error) {
+	type surrogate ParticipantStateChangedEvent
+	return json.Marshal(struct {
+		surrogate
+		Type string    `json:"type"`
+	}{
+		surrogate(event),
+		event.GetType(),
+	})
 }

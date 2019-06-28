@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 )
 
-// TextEvent describes the Text event
-type TextEvent struct {
+// FileEvent describes the Text event
+type FileEvent struct {
 	ParticipantID              string `json:"participantID"`
-	ParticipantName            string `json:"displayName"`
+	ParticipantName            string `json:"participantName"`
 	SequenceNumber             int    `json:"sequenceNumber"`
 	ConversationSequenceNumber int    `json:"conversationSequenceNumber"`
 	ContentType                string `json:"contentType"`
@@ -15,17 +15,17 @@ type TextEvent struct {
 }
 
 // GetType returns the type of this event
-func (event TextEvent) GetType() string {
-	return "text"
+func (event FileEvent) GetType() string {
+	return "file"
 }
 
-func (event TextEvent) String() string {
+func (event FileEvent) String() string {
 	return event.Text
 }
 
 // MarshalJSON encodes into JSON
-func (event TextEvent) MarshalJSON() ([]byte, error) {
-	type surrogate TextEvent
+func (event FileEvent) MarshalJSON() ([]byte, error) {
+	type surrogate FileEvent
 	return json.Marshal(struct {
 		surrogate
 		Type string    `json:"type"`
