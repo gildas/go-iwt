@@ -8,12 +8,12 @@ import (
 // QueueType defines the type of Queue
 type QueueType int
 const (
-	// Station queue type
-	Station QueueType = iota
-	// User queue type
-	User
-	// Workgroup queue type
-	Workgroup
+	// StationQueue queue type
+	StationQueue QueueType = iota
+	// UserQueue queue type
+	UserQueue
+	// WorkgroupQueue queue type
+	WorkgroupQueue
 )
 
 // MarshalJSON encodes JSON
@@ -26,11 +26,11 @@ func (queueType *QueueType) UnmarshalJSON(payload []byte) (err error) {
 	unquoted := strings.TrimSpace(strings.Replace(string(payload), `"`, ``, -1))
 	switch strings.ToLower(unquoted) {
 	case "", "workgroup":
-		*queueType = Workgroup
+		*queueType = WorkgroupQueue
 	case "user":
-		*queueType = User
+		*queueType = UserQueue
 	case "station":
-		*queueType = Station
+		*queueType = StationQueue
 	default:
 		return errors.New("Invalid QueueType: " + unquoted)
 	}
