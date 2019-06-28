@@ -32,5 +32,5 @@ func (client *Client) QueryQueue(queuename string, queuetype QueueType) (*Queue,
 }
 
 func (queue *Queue) String() string {
-	return queue.Type.String() + " Queue:" + queue.Name
+	return queue.Type.Prefix() + queue.Name
 }

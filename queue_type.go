@@ -18,7 +18,7 @@ const (
 
 // MarshalJSON encodes JSON
 func (queueType QueueType) MarshalJSON() ([]byte, error) {
-	return []byte(queueType.String()), nil
+	return []byte(`"` + queueType.String() + `"`), nil
 }
 
 // UnmarshalJSON decodes JSON
@@ -35,6 +35,11 @@ func (queueType *QueueType) UnmarshalJSON(payload []byte) (err error) {
 		return errors.New("Invalid QueueType: " + unquoted)
 	}
 	return nil
+}
+
+// Prefix returns the queue type as a prefix for Fully Qualified queues
+func (queueType QueueType) Prefix() string {
+	return queueType.String() + " Queue:"
 }
 
 func (queueType QueueType) String() string {
