@@ -13,6 +13,7 @@ type Chat struct {
 	ID                 string         `json:"chatID"`
 	Queue              *Queue         `json:"queue"`
 	Participants       []Participant  `json:"participants"`
+	Guest              Participant    `json:"guest"`            // used to store the id of the guest on their platform (LINE, KKT, etc)
 	PollWaitSuggestion time.Duration  `json:"pollWaitSuggestion"`
 	Language           string         `json:"language"`
 	DateFormat         string         `json:"dateFormat"`
@@ -30,7 +31,7 @@ func (chat *Chat) String() string {
 // StartChatOptions defines the options when starting a chat
 type StartChatOptions struct {
 	SupportedContentTypes string            `json:"supportedContentTypes"`
-	Participant           Participant       `json:"participant"`
+	Guest                 Participant       `json:"participant"`
 	TranscriptRequired    bool              `json:"transcriptRequired"`
 	EmailAddress          string            `json:"emailAddress,omitempty"`
 	Language              string            `json:"language,omitempty"`
@@ -81,7 +82,8 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	chat := Chat{
 		ID:                 results.Chat.ID,
 		Queue:              queue,
-		Participants:       []Participant{Participant{ID: results.Chat.ParticipantID, Name: options.Participant.Name, State: "active"}},
+		Participants:       []Participant{Participant{ID: results.Chat.ParticipantID, Name: options.Guest.Name, State: "active"}},
+		Guest:              options.Guest,
 		PollWaitSuggestion: time.Duration(results.Chat.PollWaitSuggestion) * time.Millisecond,
 		Language:           options.Language,
 		DateFormat:         results.Chat.DateFormat,

@@ -65,7 +65,7 @@ func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 	chat, err := suite.Client.StartChat(iwt.StartChatOptions{
 		QueueName:   "Line",
 		QueueType:   iwt.WorkgroupQueue,
-		Participant: iwt.Participant{Name: "UnitTest"},
+		Guest:       iwt.Participant{Name: "UnitTest"},
 	})
 	suite.Require().Nil(err, "Failed to start a chat, Error: %s", err)
 	suite.Require().NotNil(chat, "Chat is nil")
