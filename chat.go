@@ -2,7 +2,6 @@ package iwt
 
 import (
 	"net/http"
-	"fmt"
 	"time"
 
 	"github.com/gildas/go-logger"
@@ -56,10 +55,13 @@ type chatResponse struct {
 
 // StartChat starts a chat
 func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
+	log := client.Logger.Topic("chat").Scope("start").Child()
+
 	// Sanitizing options
 	options.SupportedContentTypes = "text/plain" // only supported types so far...
 	queue := &Queue{Name: options.QueueName, Type: options.QueueType}
 
+	log.Debugf("Starting a Chat in %s", queue)
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, err := client.sendRequest(client.Context, &requestOptions{
 		Path:    "/chat/start",
@@ -77,6 +79,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		DateFormat:         results.Chat.DateFormat,
 		TimeFormat:         results.Chat.TimeFormat,
 		Client:             client,
+		Logger:             log.Record("chat", results.Chat.ID).Child(),
 	}
 	// Start the polling go subroutine
 	// return a chan that will receive Event objects (TBD)
@@ -85,15 +88,21 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 
 // Stop stops the current chat
 func (chat *Chat) Stop() error {
+	log := chat.Logger.Scope("stop")
+
 	if len(chat.ID) == 0 {
+		log.Debugf("Chat is already stopped")
 		return nil
 	}
+
+	log.Debugf("Stopping chat...")
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/exit/" + chat.ID,
 	}, &results)
 	if err != nil {
+		log.Errorf("Failed to send /chat/exit request", err)
 		return err
 	}
 	// TODO: we emit chatstoppedevent on the chan whatever happened
@@ -106,12 +115,16 @@ func (chat *Chat) Stop() error {
 
 // SendMessage sends a message to the chat
 func (chat *Chat) SendMessage(text, contentType string) error {
+	log := chat.Logger.Scope("sendmessage")
 	if len(chat.ID) == 0 {
-		return nil
+		log.Errorf("chat is not connected")
+		return StatusNotConnectedEntity
 	}
 	if len(contentType) == 0 {
 		contentType = "text/plain"
 	}
+
+	log.Debugf("Sending %s message...", contentType)
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
@@ -122,12 +135,17 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 		}{text, contentType},
 	}, &results)
 	if err != nil {
+		log.Errorf("Failed to send /chat/sendMessage request", err)
 		return err
 	}
-	// TODO: we emit chatstoppedevent on the chan whatever happened
-	if results.Chat.Status.IsOK() || results.Chat.Status.IsA(StatusUnknownEntitySession) {
-		chat.ID = ""
+	return results.Chat.Status.Param("id", chat.ID).AsError()
+}
+
+// GetFile download a file sent by an agent
+func (chat *Chat) GetFile(filepath string) error {
+	log := chat.Logger.Scope("stop")
+	if len(chat.ID) == 0 {
+		log.Warnf("chat is not connected")
 		return nil
 	}
-	return results.Chat.Status.AsError()
 }
