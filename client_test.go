@@ -49,22 +49,16 @@ func (suite *IWTTestSuite) TestCanFetchServerConfiguration() {
 }
 
 func (suite *IWTTestSuite) TestCanQueryQueue() {
-	queue, err := suite.Client.QueryQueue("Line", "Workgroup")
+	queue, err := suite.Client.QueryQueue("Line", iwt.WorkgroupQueue)
 	suite.Require().Nil(err, "Failed to query queue, Error: %s", err)
 	suite.Client.Logger.Infof("Queue: %#v", queue)
 }
 
 func (suite *IWTTestSuite) TestFailsQueryUnknownQueue() {
-	queue, err := suite.Client.QueryQueue("UnknownQueue", "Workgroup")
+	queue, err := suite.Client.QueryQueue("UnknownQueue", iwt.WorkgroupQueue)
 	suite.Require().NotNil(err)
 	suite.Assert().Equal("error.websvc.unknownEntity.invalidQueue", err.Error())
 	suite.Client.Logger.Infof("Queue: %#v", queue)
-}
-
-func (suite *IWTTestSuite) TestFailsQueryUnsupportedQueueType() {
-	_, err := suite.Client.QueryQueue("Line", "UnknownType")
-	suite.Require().NotNil(err)
-	suite.Assert().Equal("error.websvc.unknownEntity.invalidQueueType", err.Error())
 }
 
 func (suite *IWTTestSuite) TestCanStartAndStopChat() {
