@@ -30,13 +30,12 @@ func (chat *Chat) String() string {
 
 // StartChatOptions defines the options when starting a chat
 type StartChatOptions struct {
-	SupportedContentTypes string            `json:"supportedContentTypes"`
+	Queue                 *Queue            `json:"-"`
 	Guest                 Participant       `json:"participant"`
-	TranscriptRequired    bool              `json:"transcriptRequired"`
-	EmailAddress          string            `json:"emailAddress,omitempty"`
 	Language              string            `json:"language,omitempty"`
-	QueueName             string            `json:"target"`
-	QueueType             QueueType         `json:"targettype"`
+	EmailAddress          string            `json:"emailAddress,omitempty"`
+	SupportedContentTypes string            `json:"supportedContentTypes"`
+	TranscriptRequired    bool              `json:"transcriptRequired"`
 	Attributes            map[string]string `json:"attributes,omitempty"`
 	RoutingContexts       []RoutingContext  `json:"routingContexts,omitempty"`
 }
@@ -45,6 +44,12 @@ type StartChatOptions struct {
 type RoutingContext struct {
 	Category string `json:"category"`
 	Context  string `json:"context"`
+}
+
+type chatRequest struct {
+	QueueName        string    `json:"target"`
+	QueueType        QueueType `json:"targettype"`
+	StartChatOptions
 }
 
 type chatResponse struct {
@@ -65,13 +70,16 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 
 	// Sanitizing options
 	options.SupportedContentTypes = "text/plain" // only supported types so far...
-	queue := &Queue{Name: options.QueueName, Type: options.QueueType}
 
-	log.Debugf("Starting a Chat in %s", queue)
+	log.Debugf("Starting a Chat in %s", options.Queue.String())
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, _, err := client.sendRequest(client.Context, &requestOptions{
 		Path:    "/chat/start",
-		Payload: options,
+		Payload: chatRequest{
+			options.Queue.Name,
+			options.Queue.Type,
+			options,
+		},
 	}, &results)
 	if err != nil {
 		return nil, err
@@ -81,7 +89,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	}
 	chat := Chat{
 		ID:                 results.Chat.ID,
-		Queue:              queue,
+		Queue:              options.Queue,
 		Participants:       []Participant{Participant{ID: results.Chat.ParticipantID, Name: options.Guest.Name, State: "active"}},
 		Guest:              options.Guest,
 		PollWaitSuggestion: time.Duration(results.Chat.PollWaitSuggestion) * time.Millisecond,
