@@ -170,7 +170,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 	results := struct{Chat chatResponse `json:"chat"`}{}
 	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
-		Path:   "/chat/sendMessage/" + chat.ID,
+		Path:   "/chat/sendMessage/" + chat.Participants[0].ID,
 		Payload: struct {
 			Message     string `json:"message"`
 			ContentType string `json:"contentType"`
