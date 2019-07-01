@@ -282,17 +282,24 @@ func (chat *Chat) processEvents(events []ChatEventWrapper) {
 
 	for _, event := range events {
 		log.Record("event", event).Debugf("Emitting Event %s...", event.Event.GetType())
-		// Find if we need to stop the chat
-		if len(chat.Participants) > 0 && chat.Participants[0].State == "disconnected" {
-			chat.EventChan <- StopEvent{ ChatID: chat.ID }
-			continue
-		}
-		// Do not "echo" messages received from the user back to them
-		if textEvent, ok := event.Event.(TextEvent); ok {
-			if textEvent.ParticipantType == "WebUser" && chat.IsWebUser(textEvent.ParticipantID) {
-				continue
+		switch event.Event.GetType() {
+		case ParticipantStateChangedEvent{}.GetType():
+			evt := event.Event.(ParticipantStateChangedEvent)
+			if evt.State == "disconnected" {
+				chat.EventChan <- StopEvent{ ChatID: chat.ID }
+			} else {
+				chat.EventChan <- event.Event
 			}
+		case TextEvent{}.GetType():
+			evt := event.Event.(TextEvent)
+			if evt.ParticipantType == "WebUser" && chat.IsWebUser(evt.ParticipantID) {
+				log.Debugf("This is an echo of a message sent by the WebUser, ignoring it")
+				continue
+			} else {
+				chat.EventChan <- event.Event
+			}
+		default:
+			chat.EventChan <- event.Event
 		}
-		chat.EventChan <- event.Event
 	}
 }
