@@ -63,6 +63,11 @@ type chatResponse struct {
 	Version            int                `json:"cfgVer"`
 }
 
+// IsWebUser tells if the given participantID is the customer (WebUser)
+func (chat Chat) IsWebUser(participantID string) bool {
+	return len(chat.Participants) > 0 && participantID == chat.Participants[0].ID
+}
+
 // StartChat starts a chat
 // Chat Events will be sent to Chat.EventChan
 func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
@@ -281,6 +286,12 @@ func (chat *Chat) processEvents(events []ChatEventWrapper) {
 		if len(chat.Participants) > 0 && chat.Participants[0].State == "disconnected" {
 			chat.EventChan <- StopEvent{ ChatID: chat.ID }
 			continue
+		}
+		// Do not "echo" messages received from the user back to them
+		if textEvent, ok := event.Event.(TextEvent); ok {
+			if textEvent.ParticipantType == "WebUser" && chat.IsWebUser(textEvent.ParticipantID) {
+				continue
+			}
 		}
 		chat.EventChan <- event.Event
 	}

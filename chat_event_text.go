@@ -8,7 +8,7 @@ import (
 type TextEvent struct {
 	ParticipantID              string `json:"participantID"`
 	ParticipantName            string `json:"displayName"`
-	ParticipantType            string `json:"participanType"`
+	ParticipantType            string `json:"participantType"`
 	SequenceNumber             int    `json:"sequenceNumber"`
 	ConversationSequenceNumber int    `json:"conversationSequenceNumber"`
 	ContentType                string `json:"contentType"`
