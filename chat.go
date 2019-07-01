@@ -277,6 +277,11 @@ func (chat *Chat) processEvents(events []ChatEventWrapper) {
 
 	for _, event := range events {
 		log.Record("event", event).Debugf("Emitting Event %s...", event.Event.GetType())
+		// Find if we need to stop the chat
+		if len(chat.Participants) > 0 && chat.Participants[0].State == "disconnected" {
+			chat.EventChan <- StopEvent{ ChatID: chat.ID }
+			continue
+		}
 		chat.EventChan <- event.Event
 	}
 }
