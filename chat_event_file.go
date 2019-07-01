@@ -7,11 +7,12 @@ import (
 // FileEvent describes the Text event
 type FileEvent struct {
 	ParticipantID              string `json:"participantID"`
-	ParticipantName            string `json:"participantName"`
+	ParticipantName            string `json:"displayName"`
+	ParticipantType            string `json:"participantType"`
 	SequenceNumber             int    `json:"sequenceNumber"`
 	ConversationSequenceNumber int    `json:"conversationSequenceNumber"`
 	ContentType                string `json:"contentType"`
-	Text                       string `json:"value"`
+	Path                       string `json:"value"`
 }
 
 // GetType returns the type of this event
@@ -20,7 +21,7 @@ func (event FileEvent) GetType() string {
 }
 
 func (event FileEvent) String() string {
-	return event.Text
+	return event.Path
 }
 
 // MarshalJSON encodes into JSON

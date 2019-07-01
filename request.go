@@ -114,7 +114,6 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	}
 	log.Debugf("Response %s in %s", res.Status, duration)
 	log.Tracef("Response Headers: %#v", res.Header)
-	// TODO: Cap this! as the body can be really big and the log will suffer a great deal!
 	log.Tracef("Response body (%d bytes): %s", len(resBody), string(resBody[:int(math.Min(1024,float64(len(resBody))))]))
 
 	resRequestID := res.Header.Get("X-Request-Id")

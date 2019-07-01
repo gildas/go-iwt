@@ -3,6 +3,7 @@ package iwt
 import (
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gildas/go-logger"
@@ -191,7 +192,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 
 // GetFile download a file sent by an agent
 func (chat *Chat) GetFile(filepath string) (contentType string, reader io.ReadCloser, err error) {
-	log := chat.Logger.Scope("stop")
+	log := chat.Logger.Scope("getfile")
 	if len(chat.ID) == 0 {
 		log.Errorf("chat is not connected")
 		return "", nil, StatusNotConnectedEntity
@@ -199,8 +200,8 @@ func (chat *Chat) GetFile(filepath string) (contentType string, reader io.ReadCl
 
 	log.Debugf("Requesting file...")
 	reader, contentType, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Path:   "/chat/sendMessage/" + chat.ID,
-		Accept: "application/octet-stream",
+		Path:   strings.TrimPrefix(filepath, "/websvcs"),
+		Accept: "*",
 	}, nil)
 	if err != nil {
 		log.Errorf("Failed to send /chat/sendMessage request", err)

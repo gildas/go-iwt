@@ -21,6 +21,10 @@ func (wrapper *ChatEventWrapper) UnmarshalJSON(payload []byte) (err error) {
 	header := struct {Type string `json:"type"`}{}
 	if err = json.Unmarshal(payload, &header); err != nil { return }
 	switch header.Type {
+	case FileEvent{}.GetType():
+		var inner FileEvent
+		if err = json.Unmarshal(payload, &inner); err != nil { return }
+		wrapper.Event = FileEvent(inner)
 	case ParticipantStateChangedEvent{}.GetType():
 		var inner ParticipantStateChangedEvent
 		if err = json.Unmarshal(payload, &inner); err != nil { return }
