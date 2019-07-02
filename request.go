@@ -35,7 +35,7 @@ type requestOptions struct {
 }
 
 // sendRequest sends an HTTP request to Box.com's API
-func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (reader *core.ContentReader, err error) {
+func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (*core.ContentReader, error) {
 	if len(options.RequestID) == 0 {
 		options.RequestID = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -44,7 +44,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	// Building the request body
 	reqContent, reqContentSize, err := client.buildReqContent(log, options)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// Sanitizing the given options
@@ -69,11 +69,11 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 		endpoint, err = url.Parse(client.CurrentAPIEndpoint().String() + options.Path)
 	}
 	if err != nil {
-		return
+		return nil, err
 	}
 	req, err := http.NewRequest(options.Method, endpoint.String(), reqContent)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// Setting request headers
@@ -103,24 +103,21 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	duration := time.Since(start)
 	if err != nil {
 		log.Errorf("Failed to send request", err)
-		return
+		return nil, err
 	}
 	defer res.Body.Close()
-
-	// Reading the response body
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Errorf("Failed to read response body", err)
-		return
-	}
 	log.Debugf("Response %s in %s", res.Status, duration)
 	log.Tracef("Response Headers: %#v", res.Header)
-	log.Tracef("Response body (%d bytes): %s", len(resBody), string(resBody[:int(math.Min(1024,float64(len(resBody))))]))
 
-	resRequestID := res.Header.Get("X-Request-Id")
-	if resRequestID != options.RequestID {
-		log = log.Record("duration", duration.Seconds()).Record("resreqid", resRequestID)
+	// Reading the response body
+	content := core.Content{Type: res.Header.Get("Content-Type")}
+	content.Data, err = ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Errorf("Failed to read response body", err)
+		return nil, err
 	}
+	content.Length = core.Atoi(res.Header.Get("Content-Length"), len(content.Data))
+	log.Tracef("Response body (%d bytes): %s", content.Length, string(content.Data[:int(math.Min(1024,float64(content.Length)))]))
 
 	// Processing the response
 	// TODO: Process redirections (3xx)
@@ -143,18 +140,13 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	}
 
 	if results != nil {
-		err = json.Unmarshal(resBody, results)
+		err = json.Unmarshal(content.Data, results)
 		if err != nil {
 			log.Errorf("Failed to decode response", err)
-			return
+			return nil, err
 		}
 	}
-	reader = &core.ContentReader{
-		Type:   res.Header.Get("Content-Type"),
-		Length: core.Atoi(res.Header.Get("Content-Length"), len(resBody)),
-		Reader: ioutil.NopCloser(bytes.NewReader(resBody)),
-	}
-	return
+	return content.Reader(), nil
 }
 
 // buildReqContent build the request body
