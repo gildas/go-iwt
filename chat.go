@@ -104,7 +104,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		TimeFormat:         results.Chat.TimeFormat,
 		EventChan:          make(chan ChatEvent),
 		Client:             client,
-		Logger:             log.Record("chat", results.Chat.ID).Child(),
+		Logger:             log.Topic("chat").Scope("chat").Record("chat", results.Chat.ID).Child(),
 	}
 	// Start the polling go subroutine
 	chat.startPollingMessages()
