@@ -15,8 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gildas/go-core"
 	"github.com/gildas/go-logger"
+	"github.com/google/uuid"
 )
 
 type requestOptions struct {
@@ -34,7 +35,7 @@ type requestOptions struct {
 }
 
 // sendRequest sends an HTTP request to Box.com's API
-func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (reader io.ReadCloser, contentType string, err error) {
+func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (reader *core.ContentReader, err error) {
 	if len(options.RequestID) == 0 {
 		options.RequestID = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -126,19 +127,19 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	if res.StatusCode == http.StatusFound {
 		locationURL, err := res.Location()
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 		log.Infof("We should get stuff from %s", locationURL)
 	}
 	if res.StatusCode == 503 {
-		return nil, "", StatusUnavailableService
+		return nil, StatusUnavailableService
 	}
 	if res.StatusCode >= 400 {
 		//requestError := RequestError{}
 		//if err = json.Unmarshal(resBody, &requestError); err == nil {
 		//	return nil, requestError
 		//}
-		return nil, "", fmt.Errorf("%s", res.Status)
+		return nil, fmt.Errorf("%s", res.Status)
 	}
 
 	if results != nil {
@@ -148,7 +149,12 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 			return
 		}
 	}
-	return ioutil.NopCloser(bytes.NewReader(resBody)), res.Header.Get("Content-Type"), nil
+	reader = &core.ContentReader{
+		Type:   res.Header.Get("Content-Type"),
+		Length: core.Atoi(res.Header.Get("Content-Length"), len(resBody)),
+		Reader: ioutil.NopCloser(bytes.NewReader(resBody)),
+	}
+	return
 }
 
 // buildReqContent build the request body

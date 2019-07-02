@@ -37,7 +37,7 @@ func (chat *Chat) GetParticipant(id string) (*Participant, error) {
 
 	log.Debugf("Requesting party information...")
 	results := struct{Participant Participant `json:"partyInfo"`}{}
-	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Path: "/partyInfo/" + chat.Participants[0].ID,
 		Payload: struct {ParticipantID string `json:"participantID"`}{id},
 	}, &results)

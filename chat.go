@@ -1,11 +1,11 @@
 package iwt
 
 import (
-	"io"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/gildas/go-core"
 	"github.com/gildas/go-logger"
 )
 
@@ -79,7 +79,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 
 	log.Debugf("Starting a Chat in %s", options.Queue.String())
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, _, err := client.sendRequest(client.Context, &requestOptions{
+	_, err := client.sendRequest(client.Context, &requestOptions{
 		Path:    "/chat/start",
 		Payload: chatRequest{
 			options.Queue.Name,
@@ -122,7 +122,7 @@ func (chat *Chat) Stop() error {
 
 	log.Debugf("Stopping chat...")
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/exit/" + chat.Participants[0].ID,
 	}, &results)
@@ -147,7 +147,7 @@ func (chat *Chat) Reconnect() error {
 	chat.Client.NextAPIEndpoint()
 	log.Debugf("Reconnecting chat to %s...", chat.Client.CurrentAPIEndpoint())
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method:  http.MethodPost,
 		Path:    "/chat/reconnect",
 		Payload: struct {ChatID string `json:"chatID"`}{chat.ID},
@@ -174,7 +174,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 
 	log.Debugf("Sending %s message...", contentType)
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Method: http.MethodPost,
 		Path:   "/chat/sendMessage/" + chat.Participants[0].ID,
 		Payload: struct {
@@ -191,15 +191,15 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 }
 
 // GetFile download a file sent by an agent
-func (chat *Chat) GetFile(filepath string) (contentType string, reader io.ReadCloser, err error) {
+func (chat *Chat) GetFile(filepath string) (reader *core.ContentReader, err error) {
 	log := chat.Logger.Scope("getfile")
 	if len(chat.ID) == 0 {
 		log.Errorf("chat is not connected")
-		return "", nil, StatusNotConnectedEntity
+		return nil, StatusNotConnectedEntity
 	}
 
 	log.Debugf("Requesting file...")
-	reader, contentType, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+	reader, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 		Path:   strings.TrimPrefix(filepath, "/websvcs"),
 		Accept: "*",
 	}, nil)
@@ -238,7 +238,7 @@ func (chat *Chat) startPollingMessages() {
 					return
 				case "active":
 					results := struct{Chat chatResponse `json:"chat"`}{}
-					_, _, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
+					_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
 						Path: "/chat/poll/"+chat.Participants[0].ID,
 					}, &results)
 					if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
