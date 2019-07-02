@@ -1,7 +1,9 @@
 package iwt
 
 import (
+	"mime"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -191,7 +193,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 }
 
 // GetFile download a file sent by an agent
-func (chat *Chat) GetFile(filepath string) (reader *core.ContentReader, err error) {
+func (chat *Chat) GetFile(path string) (reader *core.ContentReader, err error) {
 	log := chat.Logger.Scope("getfile")
 	if len(chat.ID) == 0 {
 		log.Errorf("chat is not connected")
@@ -200,12 +202,16 @@ func (chat *Chat) GetFile(filepath string) (reader *core.ContentReader, err erro
 
 	log.Debugf("Requesting file...")
 	reader, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Path:   strings.TrimPrefix(filepath, "/websvcs"),
+		Path:   strings.TrimPrefix(path, "/websvcs"),
 		Accept: "*",
 	}, nil)
 	if err != nil {
 		log.Errorf("Failed to send /chat/sendMessage request", err)
 		return
+	}
+	// reset the content type to something that makes sense as needed
+	if reader.Type == "application/octet-stream" {
+		reader.Type = mime.TypeByExtension(filepath.Ext(path))
 	}
 	return
 }
