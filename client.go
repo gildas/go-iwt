@@ -20,10 +20,10 @@ type Client struct {
 }
 
 // ClientOptions defines the options for instantiating a new IWT Client
-// If you use https with the Primary/Failover API endpoint and they use a self-signed certificate, you must give the option CACert
+// If you use https with the Primary/Backup API endpoint and they use a self-signed certificate, you must give the option CACert
 type ClientOptions struct {
 	PrimaryAPI  *url.URL       `json:"primary"`
-	FailoverAPI *url.URL       `json:"failover"`
+	BackupAPI   *url.URL       `json:"backup"`
 	CACert      []byte         `json:"cacert"`
 	Proxy       *url.URL       `json:"proxy"`
 	Language    string         `json:"language"`
@@ -60,11 +60,11 @@ func NewClient(ctx context.Context, options ClientOptions) *Client {
 	}
 	client.APIEndpoints = append(client.APIEndpoints, options.PrimaryAPI)
 
-	if options.FailoverAPI != nil {
-		if !strings.HasSuffix(options.FailoverAPI.Path, "/websvcs") {
-			options.FailoverAPI.Path = "/websvcs"
+	if options.BackupAPI != nil {
+		if !strings.HasSuffix(options.BackupAPI.Path, "/websvcs") {
+			options.BackupAPI.Path = "/websvcs"
 		}
-		client.APIEndpoints = append(client.APIEndpoints, options.FailoverAPI)
+		client.APIEndpoints = append(client.APIEndpoints, options.BackupAPI)
 	}
 	return client
 }
