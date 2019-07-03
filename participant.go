@@ -1,9 +1,10 @@
 package iwt
 
 import (
-	"github.com/gildas/go-core"
 	"encoding/json"
 	"net/url"
+
+	"github.com/gildas/go-core"
 )
 
 // Participant defines a chat participant
@@ -37,10 +38,10 @@ func (chat *Chat) GetParticipant(id string) (*Participant, error) {
 
 	log.Debugf("Requesting party information...")
 	results := struct{Participant Participant `json:"partyInfo"`}{}
-	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Path: "/partyInfo/" + chat.Participants[0].ID,
-		Payload: struct {ParticipantID string `json:"participantID"`}{id},
-	}, &results)
+	_, err := chat.Client.post("/partyInfo/" + chat.Participants[0].ID,
+		struct {
+			ParticipantID string `json:"participantID"`
+		}{id}, &results)
 	if err != nil {
 		return nil, err
 	}

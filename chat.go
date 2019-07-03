@@ -1,9 +1,6 @@
 package iwt
 
 import (
-	"mime"
-	"net/http"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -81,14 +78,12 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 
 	log.Debugf("Starting a Chat in %s", options.Queue.String())
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := client.sendRequest(client.Context, &requestOptions{
-		Path:    "/chat/start",
-		Payload: chatRequest{
+	_, err := client.post("/chat/start",
+		chatRequest{
 			options.Queue.Name,
 			options.Queue.Type,
 			options,
-		},
-	}, &results)
+		}, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +119,7 @@ func (chat *Chat) Stop() error {
 
 	log.Debugf("Stopping chat...")
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Method: http.MethodPost,
-		Path:   "/chat/exit/" + chat.Participants[0].ID,
-	}, &results)
+	_, err := chat.Client.post("/chat/exit/" + chat.Participants[0].ID, nil, &results)
 	if err != nil {
 		log.Errorf("Failed to send /chat/exit request", err)
 		return err
@@ -149,11 +141,7 @@ func (chat *Chat) Reconnect() error {
 	chat.Client.NextAPIEndpoint()
 	log.Debugf("Reconnecting chat to %s...", chat.Client.CurrentAPIEndpoint())
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Method:  http.MethodPost,
-		Path:    "/chat/reconnect",
-		Payload: struct {ChatID string `json:"chatID"`}{chat.ID},
-	}, &results)
+	_, err := chat.Client.post("/chat/reconnect", struct {ChatID string `json:"chatID"`}{chat.ID}, &results)
 	if err != nil {
 		log.Errorf("Failed to send /chat/exit request", err)
 		return err
@@ -176,14 +164,12 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 
 	log.Debugf("Sending %s message...", contentType)
 	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Method: http.MethodPost,
-		Path:   "/chat/sendMessage/" + chat.Participants[0].ID,
-		Payload: struct {
+	_, err := chat.Client.post("/chat/sendMessage/" + chat.Participants[0].ID,
+		struct {
 			Message     string `json:"message"`
 			ContentType string `json:"contentType"`
 		}{text, contentType},
-	}, &results)
+		&results)
 	if err != nil {
 		log.Errorf("Failed to send /chat/sendMessage request", err)
 		return err
@@ -201,17 +187,10 @@ func (chat *Chat) GetFile(path string) (reader *core.ContentReader, err error) {
 	}
 
 	log.Debugf("Requesting file...")
-	reader, err = chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-		Path:   strings.TrimPrefix(path, "/websvcs"),
-		Accept: "*",
-	}, nil)
+	reader, err = chat.Client.get(strings.TrimPrefix(path, "/websvcs"), nil)
 	if err != nil {
 		log.Errorf("Failed to send /chat/sendMessage request", err)
 		return
-	}
-	// reset the content type to something that makes sense as needed
-	if reader.Type == "application/octet-stream" {
-		reader.Type = mime.TypeByExtension(filepath.Ext(path))
 	}
 	return
 }
@@ -244,9 +223,7 @@ func (chat *Chat) startPollingMessages() {
 					return
 				case "active":
 					results := struct{Chat chatResponse `json:"chat"`}{}
-					_, err := chat.Client.sendRequest(chat.Client.Context, &requestOptions{
-						Path: "/chat/poll/"+chat.Participants[0].ID,
-					}, &results)
+					_, err := chat.Client.get("/chat/poll/"+chat.Participants[0].ID, &results)
 					if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
 						log.Warnf("A Switchover happened!")
 						chat.Reconnect()

@@ -2,9 +2,11 @@ package iwt
 
 import (
 	"context"
+	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/gildas/go-core"
 	"github.com/gildas/go-logger"
 )
 
@@ -83,4 +85,35 @@ func (client *Client) NextAPIEndpoint() *url.URL {
 		}
 	}
 	return client.APIEndpoints[client.EndPointIndex]
+}
+
+// URLWithPath gets a full URL from a given path
+func (client *Client) URLWithPath(path string) *url.URL {
+	if !strings.HasPrefix(path, "http") {
+		path = client.CurrentAPIEndpoint().String() + path
+	}
+	endpoint, err := url.Parse(path)
+	if err != nil {
+		client.Logger.Errorf("Invalid URL request for %s", path, err)
+		return nil
+	}
+	return endpoint
+}
+
+func (client *Client) post(path string, payload, results interface{}) (*core.ContentReader, error) {
+	return core.SendRequest(client.Context, &core.RequestOptions{
+		Method:    http.MethodPost,
+		URL:       client.URLWithPath(path),
+		UserAgent: "GENESYS IWT Client " + VERSION,
+		Payload:   payload,
+		Logger:    client.Logger,
+	}, results)
+}
+
+func (client *Client) get(path string, results interface{}) (*core.ContentReader, error) {
+	return core.SendRequest(client.Context, &core.RequestOptions{
+		URL:       client.URLWithPath(path),
+		UserAgent: "GENESYS IWT Client " + VERSION,
+		Logger:    client.Logger,
+	}, results)
 }

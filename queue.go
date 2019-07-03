@@ -42,16 +42,14 @@ func NewQueue(qualifiedqueue string) *Queue {
 // QueryQueue queries a queue for its status
 func (client *Client) QueryQueue(queuename string, queuetype QueueType) (*Queue, error) {
 	results := struct{Queue Queue `json:"queue"`}{}
-	_, err := client.sendRequest(client.Context, &requestOptions{
-		Path: "/queue/query",
-		Payload: struct {
+	_, err := client.post("/queue/query",
+		struct {
 			Queue
 			Participant Participant `json:"participant"`
 		}{
 			Queue{Name: queuename, Type: queuetype},
 			Participant{Name: "Anonymous User"},
-		},
-	}, &results)
+		}, &results)
 	if err != nil {
 		return nil, err
 	}
