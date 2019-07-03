@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -110,13 +109,11 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	log.Tracef("Response Headers: %#v", res.Header)
 
 	// Reading the response body
-	content := core.Content{Type: res.Header.Get("Content-Type")}
-	content.Data, err = ioutil.ReadAll(res.Body)
+	content, err := core.ContentFromReader(res.Body, res.Header.Get("Content-Type"))
 	if err != nil {
 		log.Errorf("Failed to read response body", err)
 		return nil, err
 	}
-	content.Length = core.Atoi(res.Header.Get("Content-Length"), len(content.Data))
 	log.Tracef("Response body (%d bytes): %s", content.Length, string(content.Data[:int(math.Min(1024,float64(content.Length)))]))
 
 	// Processing the response
