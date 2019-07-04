@@ -29,6 +29,10 @@ func (wrapper *ChatEventWrapper) UnmarshalJSON(payload []byte) (err error) {
 		var inner ParticipantStateChangedEvent
 		if err = json.Unmarshal(payload, &inner); err != nil { return }
 		wrapper.Event = ParticipantStateChangedEvent(inner)
+	case StartEvent{}.GetType():
+		var inner StartEvent
+		if err = json.Unmarshal(payload, &inner); err != nil { return }
+		wrapper.Event = StartEvent(inner)
 	case StopEvent{}.GetType():
 		var inner StopEvent
 		if err = json.Unmarshal(payload, &inner); err != nil { return }

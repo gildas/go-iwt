@@ -103,7 +103,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		Client:             client,
 		Logger:             log.Topic("chat").Scope("chat").Record("chat", results.Chat.ID).Child(),
 	}
-	// Start the polling go subroutine
+	chat.Logger.Infof("Chat created on queue %s with %s (%s)", chat.Queue, chat.Participants[0].Name, chat.Participants[0].ID)
 	chat.startPollingMessages()
 	return &chat, results.Chat.Status.AsError()
 }
@@ -206,18 +206,26 @@ func (chat *Chat) startPollingMessages() {
 		log := chat.Logger.Scope("pollmessages").Child()
 		for {
 			select {
-			case now := <- chat.PollTicker.C:
-				log.Debugf("Polling messages at %s", now)
+			case <- chat.PollTicker.C:
 				if len(chat.Participants) == 0 {
-					log.Infof("Chat has no participant...")
+					log.Warnf("Chat has no participant...")
 					chat.stopPollingMessages()
+					chat.EventChan <- StopEvent{ChatID: chat.ID}
 					chat.ID = ""
 					return
 				}
+				if len(chat.Participants[0].ID) == 0 {
+					log.Errorf("Chat first participant has no ID... (name=%s, state=%s)", chat.Participants[0].Name, chat.Participants[0].State)
+					chat.stopPollingMessages()
+					chat.EventChan <- StopEvent{ChatID: chat.ID}
+					chat.ID = ""
+					return
+				}
+				log.Debugf("Polling messages for Participant %s (%s) %s", chat.Participants[0].Name, chat.Participants[0].ID, chat.Participants[0].State)
 				switch chat.Participants[0].State {
 				case "disconnected":
 					log.Infof("First participant disconnected, stopping chat")
-					// Emit ChatStoppedEvent (parm: chat.ID)
+					chat.EventChan <- StopEvent{ChatID: chat.ID}
 					chat.stopPollingMessages()
 					chat.ID = ""
 					return
