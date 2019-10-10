@@ -101,7 +101,8 @@ func (client *Client) URLWithPath(path string) *url.URL {
 }
 
 func (client *Client) post(path string, payload, results interface{}) (*core.ContentReader, error) {
-	return core.SendRequest(client.Context, &core.RequestOptions{
+	return core.SendRequest(&core.RequestOptions{
+		Context:   client.Context,
 		Method:    http.MethodPost,
 		URL:       client.URLWithPath(path),
 		UserAgent: "GENESYS IWT Client " + VERSION,
@@ -111,7 +112,8 @@ func (client *Client) post(path string, payload, results interface{}) (*core.Con
 }
 
 func (client *Client) get(path string, results interface{}) (*core.ContentReader, error) {
-	return core.SendRequest(client.Context, &core.RequestOptions{
+	return core.SendRequest(&core.RequestOptions{
+		Context:   client.Context,
 		URL:       client.URLWithPath(path),
 		UserAgent: "GENESYS IWT Client " + VERSION,
 		Logger:    client.Logger,
