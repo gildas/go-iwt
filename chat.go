@@ -71,7 +71,7 @@ func (chat Chat) IsWebUser(participantID string) bool {
 // StartChat starts a chat
 // Chat Events will be sent to Chat.EventChan
 func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
-	log := client.Logger.Topic("chat").Scope("start").Child()
+	log := client.Logger.Child("chat", "start")
 
 	// Sanitizing options
 	options.SupportedContentTypes = "text/plain" // only supported types so far...
@@ -101,7 +101,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 		TimeFormat:         results.Chat.TimeFormat,
 		EventChan:          make(chan ChatEvent),
 		Client:             client,
-		Logger:             log.Topic("chat").Scope("chat").Record("chat", results.Chat.ID).Child(),
+		Logger:             client.Logger.Child("chat", "chat", "chat", results.Chat.ID),
 	}
 	chat.Logger.Infof("Chat created on queue %s with %s (%s)", chat.Queue, chat.Participants[0].Name, chat.Participants[0].ID)
 	chat.startPollingMessages()
@@ -203,7 +203,7 @@ func (chat *Chat) startPollingMessages() {
 	chat.PollTicker = time.NewTicker(chat.PollWaitSuggestion)
 
 	go func() {
-		log := chat.Logger.Scope("pollmessages").Child()
+		log := chat.Logger.Scope("pollmessages")
 		for {
 			select {
 			case <- chat.PollTicker.C:
@@ -270,7 +270,7 @@ func (chat *Chat) stopPollingMessages() {
 }
 
 func (chat *Chat) processEvents(events []ChatEventWrapper) {
-	log := chat.Logger.Scope("processevents").Child()
+	log := chat.Logger.Scope("processevents")
 
 	for _, event := range events {
 		log.Record("event", event).Debugf("Emitting Event %s...", event.Event.GetType())

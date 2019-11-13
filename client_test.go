@@ -110,6 +110,6 @@ func (suite *IWTTestSuite) BeforeTest(suiteName, testName string) {
 }
 
 func (suite *IWTTestSuite) AfterTest(suiteName, testName string) {
-	duration := time.Now().Sub(suite.Start)
+	duration := time.Since(suite.Start)
 	suite.Logger.Record("duration", duration.String()).Infof("End %s %s", testName, strings.Repeat("-", 80-5-len(testName)))
 }

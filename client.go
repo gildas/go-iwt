@@ -52,7 +52,7 @@ func NewClient(ctx context.Context, options ClientOptions) *Client {
 		Language:      options.Language,
 		CACert:        options.CACert,
 		Context:       ctx,
-		Logger:        log.Topic("iwt").Scope("iwt").Child(),
+		Logger:        log.Child("iwt", "iwt"),
 	}
 
 	if options.PrimaryAPI == nil {

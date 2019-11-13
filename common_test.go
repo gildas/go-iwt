@@ -34,6 +34,8 @@ func Load(filename string, object interface{}) (err error) {
 
 func CreateLogger(filename string) *logger.Logger {
 	folder := filepath.Join(".", "log")
-	os.MkdirAll(folder, os.ModePerm)
-	return logger.CreateWithDestination("test", "file://"+filepath.Join(folder, filename))
+	if err := os.MkdirAll(folder, os.ModePerm); err != nil {
+		panic(err)
+	}
+	return logger.CreateWithStream("test", &logger.FileStream{Path: filepath.Join(folder, filename)})
 }
