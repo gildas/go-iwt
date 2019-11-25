@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gildas/go-core"
 	"github.com/gildas/go-logger"
+	"github.com/gildas/go-request"
 )
 
 // Chat describes a live chat
@@ -179,7 +179,7 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 }
 
 // GetFile download a file sent by an agent
-func (chat *Chat) GetFile(path string) (reader *core.ContentReader, err error) {
+func (chat *Chat) GetFile(path string) (reader *request.ContentReader, err error) {
 	log := chat.Logger.Scope("getfile")
 	if len(chat.ID) == 0 {
 		log.Errorf("chat is not connected")

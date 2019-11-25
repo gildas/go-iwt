@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gildas/go-core"
 	"github.com/gildas/go-logger"
+	"github.com/gildas/go-request"
 )
 
 // Client is the IWT client to talk to PureConnect
@@ -100,8 +100,8 @@ func (client *Client) URLWithPath(path string) *url.URL {
 	return endpoint
 }
 
-func (client *Client) post(path string, payload, results interface{}) (*core.ContentReader, error) {
-	return core.SendRequest(&core.RequestOptions{
+func (client *Client) post(path string, payload, results interface{}) (*request.ContentReader, error) {
+	return request.Send(&request.Options{
 		Context:   client.Context,
 		Method:    http.MethodPost,
 		URL:       client.URLWithPath(path),
@@ -111,8 +111,8 @@ func (client *Client) post(path string, payload, results interface{}) (*core.Con
 	}, results)
 }
 
-func (client *Client) get(path string, results interface{}) (*core.ContentReader, error) {
-	return core.SendRequest(&core.RequestOptions{
+func (client *Client) get(path string, results interface{}) (*request.ContentReader, error) {
+	return request.Send(&request.Options{
 		Context:   client.Context,
 		URL:       client.URLWithPath(path),
 		UserAgent: "GENESYS IWT Client " + VERSION,
