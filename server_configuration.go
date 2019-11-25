@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gildas/go-core"
+	"github.com/gildas/go-request"
 )
 
 // ServerConfiguration contains information about a PureConnect server
@@ -19,7 +19,7 @@ func (client *Client) GetServerConfiguration() (*ServerConfiguration, error) {
 		Config ServerConfiguration `json:"serverConfiguration"`
 	}{}
 	_, err := client.get("/serverConfiguration", &results)
-	if reqerr, ok := err.(core.RequestError); ok && reqerr.StatusCode == http.StatusServiceUnavailable {
+	if reqerr, ok := err.(request.Error); ok && reqerr.StatusCode == http.StatusServiceUnavailable {
 		return nil, err
 	}
 	if err != nil {
