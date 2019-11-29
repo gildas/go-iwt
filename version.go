@@ -4,8 +4,7 @@ package iwt
 var commit string
 
 // VERSION is the version of this application
-var VERSION = "0.0.1" + commit
+var VERSION = "0.1.0" + commit
 
 // APP is the name of the application
 const APP string = "IWT Agent"
-
