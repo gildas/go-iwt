@@ -2,9 +2,6 @@ package iwt
 
 import (
 	"fmt"
-	"net/http"
-
-	"github.com/gildas/go-request"
 )
 
 // ServerConfiguration contains information about a PureConnect server
@@ -18,11 +15,7 @@ func (client *Client) GetServerConfiguration() (*ServerConfiguration, error) {
 	results := []struct {
 		Config ServerConfiguration `json:"serverConfiguration"`
 	}{}
-	_, err := client.get("/serverConfiguration", &results)
-	if reqerr, ok := err.(request.Error); ok && reqerr.StatusCode == http.StatusServiceUnavailable {
-		return nil, err
-	}
-	if err != nil {
+	if _, err := client.get("/serverConfiguration", &results); err != nil {
 		return nil, err
 	}
 	if len(results) == 0 {
