@@ -7,6 +7,7 @@ import (
 
 // QueueType defines the type of Queue
 type QueueType int
+
 const (
 	// StationQueue queue type
 	StationQueue QueueType = iota

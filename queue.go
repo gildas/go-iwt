@@ -41,7 +41,9 @@ func NewQueue(qualifiedqueue string) *Queue {
 
 // QueryQueue queries a queue for its status
 func (client *Client) QueryQueue(queuename string, queuetype QueueType) (*Queue, error) {
-	results := struct{Queue Queue `json:"queue"`}{}
+	results := struct {
+		Queue Queue `json:"queue"`
+	}{}
 	_, err := client.post("/queue/query",
 		struct {
 			Queue

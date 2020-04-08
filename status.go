@@ -1,8 +1,8 @@
 package iwt
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 )
 
 // Status defines the status of a queue, chat, IWT request
@@ -13,9 +13,12 @@ type Status struct {
 }
 
 var (
+	// StatusUnknownEntitySession means the provided session does not exist on the PureConnect Server
 	StatusUnknownEntitySession = Status{"failure", "error.websvc.unknownEntity.session", nil}
-	StatusNotConnectedEntity   = Status{"failure", "error.websvc.entity.notconnected",   nil}
-	StatusUnavailableService   = Status{"failure", "error.websvc.unavailable", nil}
+	// StatusNotConnectedEntity means the client is not connected to any PureConnect Server
+	StatusNotConnectedEntity = Status{"failure", "error.websvc.entity.notconnected", nil}
+	// StatusUnavailableService means the PureConnect Server is not available for requests
+	StatusUnavailableService = Status{"failure", "error.websvc.unavailable", nil}
 )
 
 // IsOK tells if the status is a success
@@ -37,7 +40,7 @@ func (status Status) AsError() error {
 }
 
 // Param adds a param
-func (status Status) Param(key string, value interface{}) (Status) {
+func (status Status) Param(key string, value interface{}) Status {
 	final := status
 	if len(final.Params) == 0 {
 		final.Params = map[string]interface{}{}
@@ -50,7 +53,7 @@ func (status Status) Error() string {
 	if status.IsOK() {
 		return ""
 	}
-	if len(status.Params )> 0 {
+	if len(status.Params) > 0 {
 		sb := strings.Builder{}
 		sb.WriteString(status.Reason)
 		sb.WriteString("(")

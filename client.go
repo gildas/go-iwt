@@ -12,7 +12,7 @@ import (
 
 // Client is the IWT client to talk to PureConnect
 type Client struct {
-	APIEndpoints  []*url.URL       `json:"apiEndpoints"`
+	APIEndpoints  []*url.URL      `json:"apiEndpoints"`
 	EndPointIndex int             `json:"endpointIndex"`
 	Proxy         *url.URL        `json:"proxy"`
 	Language      string          `json:"language"`
@@ -24,12 +24,12 @@ type Client struct {
 // ClientOptions defines the options for instantiating a new IWT Client
 // If you use https with the Primary/Backup API endpoint and they use a self-signed certificate, you must give the option CACert
 type ClientOptions struct {
-	PrimaryAPI  *url.URL       `json:"primary"`
-	BackupAPI   *url.URL       `json:"backup"`
-	CACert      []byte         `json:"cacert"`
-	Proxy       *url.URL       `json:"proxy"`
-	Language    string         `json:"language"`
-	Logger      *logger.Logger `json:"-"`
+	PrimaryAPI *url.URL       `json:"primary"`
+	BackupAPI  *url.URL       `json:"backup"`
+	CACert     []byte         `json:"cacert"`
+	Proxy      *url.URL       `json:"proxy"`
+	Language   string         `json:"language"`
+	Logger     *logger.Logger `json:"-"`
 }
 
 // NewClient instantiates a new IWT Client

@@ -2,8 +2,10 @@ package iwt
 
 import (
 	"encoding/json"
-	"github.com/gildas/go-core"
 	"net/url"
+
+	"github.com/gildas/go-core"
+	"github.com/gildas/go-errors"
 )
 
 // URLEvent describes the Text event
@@ -26,7 +28,7 @@ func (event URLEvent) String() string {
 // MarshalJSON encodes into JSON
 func (event URLEvent) MarshalJSON() ([]byte, error) {
 	type surrogate URLEvent
-	return json.Marshal(struct {
+	payload, err := json.Marshal(struct {
 		surrogate
 		Type string    `json:"type"`
 		U    *core.URL `json:"value"`
@@ -35,6 +37,7 @@ func (event URLEvent) MarshalJSON() ([]byte, error) {
 		event.GetType(),
 		(*core.URL)(event.URL),
 	})
+	return payload, errors.JSONMarshalError.Wrap(err)
 }
 
 // UnmarshalJSON decodes JSON
@@ -45,7 +48,9 @@ func (event *URLEvent) UnmarshalJSON(payload []byte) (err error) {
 		Type string    `json:"type"`
 		U    *core.URL `json:"value"`
 	}
-	if err = json.Unmarshal(payload, &inner); err != nil { return }
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
 	*event = URLEvent(inner.surrogate)
 	event.URL = (*url.URL)(inner.U)
 	return

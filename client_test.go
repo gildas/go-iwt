@@ -82,13 +82,12 @@ func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 func (suite *IWTTestSuite) SetupSuite() {
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
 	suite.Logger = logger.Create("test",
-			&logger.FileStream{
-					Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
-					Unbuffered:  true,
-					FilterLevel: logger.TRACE,
-			},
+		&logger.FileStream{
+			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:  true,
+			FilterLevel: logger.TRACE,
+		},
 	).Child("test", "test")
-
 
 	primaryAPI, err := url.Parse(core.GetEnvAsString("PRIMARY", ""))
 	suite.Require().Nil(err, "Failed to parse Primary PureConnect URL")
