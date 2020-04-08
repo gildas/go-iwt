@@ -1,12 +1,12 @@
 package iwt_test
 
 import (
-	"github.com/stretchr/testify/require"
 	"encoding/json"
 	"testing"
 
 	"github.com/gildas/go-iwt"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestQueueTypeCanStringify(t *testing.T) {

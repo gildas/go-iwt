@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -76,9 +77,18 @@ func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 	suite.Require().Nil(err, "Failed to stop a chat, Error: %s", err)
 }
 
+// Suite Tools
+
 func (suite *IWTTestSuite) SetupSuite() {
-	suite.Name = "IWT"
-	suite.Logger = CreateLogger(fmt.Sprintf("test-%s.log", strings.ToLower(suite.Name)))
+	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
+	suite.Logger = logger.Create("test",
+			&logger.FileStream{
+					Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+					Unbuffered:  true,
+					FilterLevel: logger.TRACE,
+			},
+	).Child("test", "test")
+
 
 	primaryAPI, err := url.Parse(core.GetEnvAsString("PRIMARY", ""))
 	suite.Require().Nil(err, "Failed to parse Primary PureConnect URL")
@@ -89,7 +99,7 @@ func (suite *IWTTestSuite) SetupSuite() {
 	})
 	suite.Require().NotNil(suite.Client, "Failed to instantiate a new IWT Client")
 
-	suite.Logger.Infof("Start %s %s", suite.Name, strings.Repeat("=", 80-7-len(suite.Name)))
+	suite.Logger.Infof("Suite Start %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
 }
 
 func (suite *IWTTestSuite) TearDownSuite() {
@@ -101,15 +111,16 @@ func (suite *IWTTestSuite) TearDownSuite() {
 		//err := suite.Provider.PurgeAll(nil, suite.Logger)
 		//suite.Nil(err, "Failed to clean data. %s", err)
 	}
-	suite.Logger.Infof("End %s %s", suite.Name, strings.Repeat("=", 80-5-len(suite.Name)))
+	suite.Logger.Infof("Suite End %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
+	suite.Logger.Close()
 }
 
 func (suite *IWTTestSuite) BeforeTest(suiteName, testName string) {
-	suite.Logger.Infof("Start %s %s", testName, strings.Repeat("-", 80-7-len(testName)))
+	suite.Logger.Infof("Test Start %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
 	suite.Start = time.Now()
 }
 
 func (suite *IWTTestSuite) AfterTest(suiteName, testName string) {
 	duration := time.Since(suite.Start)
-	suite.Logger.Record("duration", duration.String()).Infof("End %s %s", testName, strings.Repeat("-", 80-5-len(testName)))
+	suite.Logger.Record("duration", duration.String()).Infof("Test End %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
 }
