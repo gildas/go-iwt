@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/gildas/go-core"
+	"github.com/gildas/go-errors"
 )
 
 // Participant defines a chat participant
@@ -37,8 +38,10 @@ func (chat *Chat) GetParticipant(id string) (*Participant, error) {
 	}
 
 	log.Debugf("Requesting party information...")
-	results := struct{Participant Participant `json:"partyInfo"`}{}
-	_, err := chat.Client.post("/partyInfo/" + chat.Participants[0].ID,
+	results := struct {
+		Participant Participant `json:"partyInfo"`
+	}{}
+	_, err := chat.Client.post("/partyInfo/"+chat.Participants[0].ID,
 		struct {
 			ParticipantID string `json:"participantID"`
 		}{id}, &results)
@@ -52,13 +55,14 @@ func (chat *Chat) GetParticipant(id string) (*Participant, error) {
 // MarshalJSON encodes into JSON
 func (participant Participant) MarshalJSON() ([]byte, error) {
 	type surrogate Participant
-	return json.Marshal(struct {
+	payload, err := json.Marshal(struct {
 		surrogate
-		P    *core.URL `json:"photo,omitempty"`
+		P *core.URL `json:"photo,omitempty"`
 	}{
 		surrogate(participant),
 		(*core.URL)(participant.Picture),
 	})
+	return payload, errors.JSONMarshalError.Wrap(err)
 }
 
 // UnmarshalJSON decodes JSON
@@ -69,7 +73,9 @@ func (participant *Participant) UnmarshalJSON(payload []byte) (err error) {
 		Type string    `json:"type"`
 		P    *core.URL `json:"photo,omitempty"`
 	}
-	if err = json.Unmarshal(payload, &inner); err != nil { return }
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
 	*participant = Participant(inner.surrogate)
 	participant.Picture = (*url.URL)(inner.P)
 	return

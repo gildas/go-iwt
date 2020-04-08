@@ -2,13 +2,15 @@ package iwt
 
 import (
 	"encoding/json"
+
+	"github.com/gildas/go-errors"
 )
 
 // StartEvent describes the Start event
 type StartEvent struct {
 	ChatID       string        `json:"chatID"`
 	Participants []Participant `json:"participants"`
-	Guest        Participant   `json:"guest"`            // used to store the id of the guest on their platform (LINE, KKT, etc)
+	Guest        Participant   `json:"guest"` // used to store the id of the guest on their platform (LINE, KKT, etc)
 	Language     string        `json:"language"`
 	DateFormat   string        `json:"dateFormat"`
 	TimeFormat   string        `json:"timeFormat"`
@@ -26,11 +28,12 @@ func (event StartEvent) String() string {
 // MarshalJSON encodes into JSON
 func (event StartEvent) MarshalJSON() ([]byte, error) {
 	type surrogate StartEvent
-	return json.Marshal(struct {
+	payload, err := json.Marshal(struct {
 		surrogate
-		Type string    `json:"type"`
+		Type string `json:"type"`
 	}{
 		surrogate(event),
 		event.GetType(),
 	})
+	return payload, errors.JSONMarshalError.Wrap(err)
 }

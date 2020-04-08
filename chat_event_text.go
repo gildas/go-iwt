@@ -2,6 +2,8 @@ package iwt
 
 import (
 	"encoding/json"
+
+	"github.com/gildas/go-errors"
 )
 
 // TextEvent describes the Text event
@@ -27,11 +29,12 @@ func (event TextEvent) String() string {
 // MarshalJSON encodes into JSON
 func (event TextEvent) MarshalJSON() ([]byte, error) {
 	type surrogate TextEvent
-	return json.Marshal(struct {
+	payload, err := json.Marshal(struct {
 		surrogate
-		Type string    `json:"type"`
+		Type string `json:"type"`
 	}{
 		surrogate(event),
 		event.GetType(),
 	})
+	return payload, errors.JSONMarshalError.Wrap(err)
 }

@@ -13,7 +13,7 @@ type Chat struct {
 	ID                 string         `json:"chatID"`
 	Queue              *Queue         `json:"queue"`
 	Participants       []Participant  `json:"participants"`
-	Guest              Participant    `json:"guest"`            // used to store the id of the guest on their platform (LINE, KKT, etc)
+	Guest              Participant    `json:"guest"` // used to store the id of the guest on their platform (LINE, KKT, etc)
 	PollWaitSuggestion time.Duration  `json:"pollWaitSuggestion"`
 	Language           string         `json:"language"`
 	DateFormat         string         `json:"dateFormat"`
@@ -47,8 +47,8 @@ type RoutingContext struct {
 }
 
 type chatRequest struct {
-	QueueName        string    `json:"target"`
-	QueueType        QueueType `json:"targettype"`
+	QueueName string    `json:"target"`
+	QueueType QueueType `json:"targettype"`
 	StartChatOptions
 }
 
@@ -77,7 +77,9 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	options.SupportedContentTypes = "text/plain" // only supported types so far...
 
 	log.Debugf("Starting a Chat in %s", options.Queue.String())
-	results := struct{Chat chatResponse `json:"chat"`}{}
+	results := struct {
+		Chat chatResponse `json:"chat"`
+	}{}
 	_, err := client.post("/chat/start",
 		chatRequest{
 			options.Queue.Name,
@@ -93,7 +95,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	chat := Chat{
 		ID:                 results.Chat.ID,
 		Queue:              options.Queue,
-		Participants:       []Participant{Participant{ID: results.Chat.ParticipantID, Name: options.Guest.Name, State: "active"}},
+		Participants:       []Participant{{ID: results.Chat.ParticipantID, Name: options.Guest.Name, State: "active"}},
 		Guest:              options.Guest,
 		PollWaitSuggestion: time.Duration(results.Chat.PollWaitSuggestion) * time.Millisecond,
 		Language:           options.Language,
@@ -118,8 +120,10 @@ func (chat *Chat) Stop() error {
 	}
 
 	log.Debugf("Stopping chat...")
-	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.post("/chat/exit/" + chat.Participants[0].ID, nil, &results)
+	results := struct {
+		Chat chatResponse `json:"chat"`
+	}{}
+	_, err := chat.Client.post("/chat/exit/"+chat.Participants[0].ID, nil, &results)
 	if err != nil {
 		log.Errorf("Failed to send /chat/exit request", err)
 		return err
@@ -140,8 +144,12 @@ func (chat *Chat) Reconnect() error {
 	chat.stopPollingMessages()
 	chat.Client.NextAPIEndpoint()
 	log.Debugf("Reconnecting chat to %s...", chat.Client.CurrentAPIEndpoint())
-	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.post("/chat/reconnect", struct {ChatID string `json:"chatID"`}{chat.ID}, &results)
+	results := struct {
+		Chat chatResponse `json:"chat"`
+	}{}
+	_, err := chat.Client.post("/chat/reconnect", struct {
+		ChatID string `json:"chatID"`
+	}{chat.ID}, &results)
 	if err != nil {
 		log.Errorf("Failed to send /chat/exit request", err)
 		return err
@@ -163,8 +171,10 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 	}
 
 	log.Debugf("Sending %s message...", contentType)
-	results := struct{Chat chatResponse `json:"chat"`}{}
-	_, err := chat.Client.post("/chat/sendMessage/" + chat.Participants[0].ID,
+	results := struct {
+		Chat chatResponse `json:"chat"`
+	}{}
+	_, err := chat.Client.post("/chat/sendMessage/"+chat.Participants[0].ID,
 		struct {
 			Message     string `json:"message"`
 			ContentType string `json:"contentType"`
@@ -206,7 +216,7 @@ func (chat *Chat) startPollingMessages() {
 		log := chat.Logger.Scope("pollmessages")
 		for {
 			select {
-			case <- chat.PollTicker.C:
+			case <-chat.PollTicker.C:
 				if len(chat.Participants) == 0 {
 					log.Warnf("Chat has no participant...")
 					chat.stopPollingMessages()
@@ -230,7 +240,9 @@ func (chat *Chat) startPollingMessages() {
 					chat.ID = ""
 					return
 				case "active":
-					results := struct{Chat chatResponse `json:"chat"`}{}
+					results := struct {
+						Chat chatResponse `json:"chat"`
+					}{}
 					_, err := chat.Client.get("/chat/poll/"+chat.Participants[0].ID, &results)
 					if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
 						log.Warnf("A Switchover happened!")
@@ -278,7 +290,7 @@ func (chat *Chat) processEvents(events []ChatEventWrapper) {
 		case ParticipantStateChangedEvent{}.GetType():
 			evt := event.Event.(ParticipantStateChangedEvent)
 			if evt.State == "disconnected" {
-				chat.EventChan <- StopEvent{ ChatID: chat.ID }
+				chat.EventChan <- StopEvent{ChatID: chat.ID}
 			} else {
 				chat.EventChan <- event.Event
 			}

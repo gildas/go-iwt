@@ -3,6 +3,8 @@ package iwt
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/gildas/go-errors"
 )
 
 // ParticipantStateChangedEvent describes the ParticipantStateChanged event
@@ -25,11 +27,12 @@ func (event ParticipantStateChangedEvent) String() string {
 // MarshalJSON encodes into JSON
 func (event ParticipantStateChangedEvent) MarshalJSON() ([]byte, error) {
 	type surrogate ParticipantStateChangedEvent
-	return json.Marshal(struct {
+	payload, err := json.Marshal(struct {
 		surrogate
-		Type string    `json:"type"`
+		Type string `json:"type"`
 	}{
 		surrogate(event),
 		event.GetType(),
 	})
+	return payload, errors.JSONMarshalError.Wrap(err)
 }
