@@ -95,7 +95,7 @@ func (client *Client) StartChat(options StartChatOptions) (*Chat, error) {
 	chat := Chat{
 		ID:                 results.Chat.ID,
 		Queue:              options.Queue,
-		Participants:       []Participant{Participant{ID: results.Chat.ParticipantID, Name: options.Guest.Name, State: "active"}},
+		Participants:       []Participant{{ID: results.Chat.ParticipantID, Name: options.Guest.Name, State: "active"}},
 		Guest:              options.Guest,
 		PollWaitSuggestion: time.Duration(results.Chat.PollWaitSuggestion) * time.Millisecond,
 		Language:           options.Language,
