@@ -214,59 +214,58 @@ func (chat *Chat) startPollingMessages() {
 
 	go func() {
 		log := chat.Logger.Scope("pollmessages")
-		for {
-			select {
-			case <-chat.PollTicker.C:
-				if len(chat.Participants) == 0 {
-					log.Warnf("Chat has no participant...")
+		for range chat.PollTicker.C {
+			if len(chat.Participants) == 0 {
+				log.Warnf("Chat has no participant...")
+				chat.stopPollingMessages()
+				chat.EventChan <- StopEvent{ChatID: chat.ID}
+				chat.ID = ""
+				return
+			}
+			if len(chat.Participants[0].ID) == 0 {
+				log.Errorf("Chat first participant has no ID... (name=%s, state=%s)", chat.Participants[0].Name, chat.Participants[0].State)
+				chat.stopPollingMessages()
+				chat.EventChan <- StopEvent{ChatID: chat.ID}
+				chat.ID = ""
+				return
+			}
+			log.Debugf("Polling messages for Participant %s (%s) %s", chat.Participants[0].Name, chat.Participants[0].ID, chat.Participants[0].State)
+			switch chat.Participants[0].State {
+			case "disconnected":
+				log.Infof("First participant disconnected, stopping chat")
+				chat.EventChan <- StopEvent{ChatID: chat.ID}
+				chat.stopPollingMessages()
+				chat.ID = ""
+				return
+			case "active":
+				results := struct {
+					Chat chatResponse `json:"chat"`
+				}{}
+				_, err := chat.Client.get("/chat/poll/"+chat.Participants[0].ID, &results)
+				if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
+					log.Warnf("A Switchover happened!")
+					if err =chat.Reconnect(); err != nil {
+						log.Errorf("Failed to reconnect to backup server")
+					}
+					continue
+				}
+				if err != nil {
+					log.Errorf("Failed to send /chat/poll request", err)
+					continue
+				}
+				if results.Chat.Status.IsA(StatusUnknownEntitySession) {
+					log.Warnf("Zombie Chat, stopping it")
 					chat.stopPollingMessages()
-					chat.EventChan <- StopEvent{ChatID: chat.ID}
 					chat.ID = ""
 					return
 				}
-				if len(chat.Participants[0].ID) == 0 {
-					log.Errorf("Chat first participant has no ID... (name=%s, state=%s)", chat.Participants[0].Name, chat.Participants[0].State)
-					chat.stopPollingMessages()
-					chat.EventChan <- StopEvent{ChatID: chat.ID}
-					chat.ID = ""
-					return
+				if !results.Chat.Status.IsOK() {
+					log.Errorf("Results contains an error", results.Chat.Status.AsError())
+					continue
 				}
-				log.Debugf("Polling messages for Participant %s (%s) %s", chat.Participants[0].Name, chat.Participants[0].ID, chat.Participants[0].State)
-				switch chat.Participants[0].State {
-				case "disconnected":
-					log.Infof("First participant disconnected, stopping chat")
-					chat.EventChan <- StopEvent{ChatID: chat.ID}
-					chat.stopPollingMessages()
-					chat.ID = ""
-					return
-				case "active":
-					results := struct {
-						Chat chatResponse `json:"chat"`
-					}{}
-					_, err := chat.Client.get("/chat/poll/"+chat.Participants[0].ID, &results)
-					if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
-						log.Warnf("A Switchover happened!")
-						chat.Reconnect()
-						continue
-					}
-					if err != nil {
-						log.Errorf("Failed to send /chat/poll request", err)
-						continue
-					}
-					if results.Chat.Status.IsA(StatusUnknownEntitySession) {
-						log.Warnf("Zombie Chat, stopping it")
-						chat.stopPollingMessages()
-						chat.ID = ""
-						return
-					}
-					if !results.Chat.Status.IsOK() {
-						log.Errorf("Results contains an error", results.Chat.Status.AsError())
-						continue
-					}
-					chat.processEvents(results.Chat.Events)
-				default:
-					log.Warnf("Unsupported state %s for participant %s (%s)", chat.Participants[0].State, chat.Participants[0].Name, chat.Participants[0].ID)
-				}
+				chat.processEvents(results.Chat.Events)
+			default:
+				log.Warnf("Unsupported state %s for participant %s (%s)", chat.Participants[0].State, chat.Participants[0].Name, chat.Participants[0].ID)
 			}
 		}
 	}()
