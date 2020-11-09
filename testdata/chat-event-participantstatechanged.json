@@ -1,0 +1,7 @@
+{                                                                                                                                                                                                                                     
+  "type": "participantStateChanged",
+  "participantID": "4173f183-ed9d-4b0c-8a19-4899676ab206",
+  "participantName": "Bob Minion",
+  "sequenceNumber": 0,
+  "state": "active"
+}

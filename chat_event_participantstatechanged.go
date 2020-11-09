@@ -9,10 +9,8 @@ import (
 
 // ParticipantStateChangedEvent describes the ParticipantStateChanged event
 type ParticipantStateChangedEvent struct {
-	ParticipantID   string `json:"participantID"`
-	ParticipantName string `json:"participantName"`
-	SequenceNumber  int    `json:"sequenceNumber"`
-	State           string `json:"state"`
+	SequenceNumber int         `json:"sequenceNumber"`
+	Participant    Participant `json:"-"`
 }
 
 // GetType returns the type of this event
@@ -21,7 +19,7 @@ func (event ParticipantStateChangedEvent) GetType() string {
 }
 
 func (event ParticipantStateChangedEvent) String() string {
-	return fmt.Sprintf("Participant %s (%s) new state: %s", event.ParticipantName, event.ParticipantID, event.State)
+	return fmt.Sprintf("Participant %s (%s) new state: %s", event.Participant.Name, event.Participant.ID, event.Participant.State)
 }
 
 // MarshalJSON encodes into JSON
@@ -35,4 +33,22 @@ func (event ParticipantStateChangedEvent) MarshalJSON() ([]byte, error) {
 		event.GetType(),
 	})
 	return payload, errors.JSONMarshalError.Wrap(err)
+}
+
+// UnmarshalJSON decodes JSON
+func (event *ParticipantStateChangedEvent) UnmarshalJSON(payload []byte) (err error) {
+	type surrogate ParticipantStateChangedEvent
+	var inner struct {
+		surrogate
+	}
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
+	*event = ParticipantStateChangedEvent(inner.surrogate)
+
+	// Capture the participant from the same payload
+	if err = json.Unmarshal(payload, &event.Participant); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
+	return
 }

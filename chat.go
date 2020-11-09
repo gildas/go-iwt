@@ -58,7 +58,7 @@ type chatResponse struct {
 	PollWaitSuggestion int                `json:"pollWaitSuggestion,omitempty"` // in ms => time.Duration
 	DateFormat         string             `json:"dateFormat,omitempty"`
 	TimeFormat         string             `json:"timeFormat,omitempty"`
-	Events             []ChatEventWrapper `json:"events"`
+	Events             []chatEventWrapper `json:"events"`
 	Status             Status             `json:"status"`
 	Version            int                `json:"cfgVer"`
 }
@@ -280,7 +280,7 @@ func (chat *Chat) stopPollingMessages() {
 	chat.PollTicker = nil
 }
 
-func (chat *Chat) processEvents(events []ChatEventWrapper) {
+func (chat *Chat) processEvents(events []chatEventWrapper) {
 	log := chat.Logger.Scope("processevents")
 
 	for _, event := range events {
@@ -288,14 +288,14 @@ func (chat *Chat) processEvents(events []ChatEventWrapper) {
 		switch event.Event.GetType() {
 		case ParticipantStateChangedEvent{}.GetType():
 			evt := event.Event.(ParticipantStateChangedEvent)
-			if evt.State == "disconnected" {
+			if evt.Participant.State == "disconnected" {
 				chat.EventChan <- StopEvent{ChatID: chat.ID}
 			} else {
 				chat.EventChan <- event.Event
 			}
 		case TextEvent{}.GetType():
 			evt := event.Event.(TextEvent)
-			if evt.ParticipantType == "WebUser" && chat.IsWebUser(evt.ParticipantID) {
+			if evt.Participant.Type == "WebUser" && chat.IsWebUser(evt.Participant.ID) {
 				log.Debugf("This is an echo of a message sent by the WebUser, ignoring it")
 				continue
 			} else {

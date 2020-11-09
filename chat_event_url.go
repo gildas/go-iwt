@@ -10,10 +10,9 @@ import (
 
 // URLEvent describes the Text event
 type URLEvent struct {
-	ParticipantID   string   `json:"participantID"`
-	ParticipantName string   `json:"displayName"`
-	SequenceNumber  int      `json:"sequenceNumber"`
-	URL             *url.URL `json:"-"`
+	SequenceNumber  int         `json:"sequenceNumber"`
+	Participant     Participant `json:"-"`
+	URL             *url.URL    `json:"-"`
 }
 
 // GetType returns the type of this event
@@ -53,5 +52,10 @@ func (event *URLEvent) UnmarshalJSON(payload []byte) (err error) {
 	}
 	*event = URLEvent(inner.surrogate)
 	event.URL = (*url.URL)(inner.U)
+
+	// Capture the participant from the same payload
+	if err = json.Unmarshal(payload, &event.Participant); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
 	return
 }

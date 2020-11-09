@@ -1,0 +1,10 @@
+{
+    "type": "text",
+    "participantType": "Agent",
+    "participantID": "4cf50a4c-73bb-4e24-a6ff-d069dfcc6ceb",
+    "displayName": "Administrator",
+    "sequenceNumber": 11,
+    "conversationSequenceNumber": 0,
+    "contentType": "text/plain",
+    "value": "banana"
+}
