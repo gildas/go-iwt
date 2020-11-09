@@ -11,8 +11,8 @@ import (
 // Participant defines a chat participant
 type Participant struct {
 	Type        string   `json:"participantType"`
-	ID          string   `json:"participantID,omitempty"`
-	Name        string   `json:"name"`
+	ID          string   `json:"participantID"`
+	Name        string   `json:"participantName"`
 	Credentials string   `json:"credentials,omitempty"`
 	Picture     *url.URL `json:"-"`
 	State       string   `json:"state,omitempty"`
@@ -70,13 +70,21 @@ func (participant *Participant) UnmarshalJSON(payload []byte) (err error) {
 	type surrogate Participant
 	var inner struct {
 		surrogate
-		Type string    `json:"type"`
-		P    *core.URL `json:"photo,omitempty"`
+		Type        string    `json:"type"`
+		Name        string    `jon:"name"`
+		DisplayName string    `json:"displayName"`
+		P           *core.URL `json:"photo"`
 	}
 	if err = json.Unmarshal(payload, &inner); err != nil {
 		return errors.JSONUnmarshalError.Wrap(err)
 	}
 	*participant = Participant(inner.surrogate)
 	participant.Picture = (*url.URL)(inner.P)
+	if len(participant.Name) == 0 {
+		participant.Name = inner.DisplayName
+		if len(participant.Name) == 0 {
+			participant.Name = inner.Name
+		}
+	}
 	return
 }

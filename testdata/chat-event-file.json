@@ -1,0 +1,9 @@
+{
+    "type": "file",
+    "participantType": "Agent" ,
+    "displayName": "Administrator",
+    "participantID": "4cf50a4c-73bb-4e24-a6ff-d069dfcc6ceb",
+    "sequenceNumber": 12,
+    "conversationSequenceNumber": 0,
+    "value": "/websvcs/chat/getfile/4173f183-ed9d-4b0c-8a19-4899676ab206/46da9750794c465581c043128ad5e28c/-image.jpeg"
+}

@@ -8,13 +8,11 @@ import (
 
 // FileEvent describes the Text event
 type FileEvent struct {
-	ParticipantID              string `json:"participantID"`
-	ParticipantName            string `json:"displayName"`
-	ParticipantType            string `json:"participantType"`
-	SequenceNumber             int    `json:"sequenceNumber"`
-	ConversationSequenceNumber int    `json:"conversationSequenceNumber"`
-	ContentType                string `json:"contentType"`
-	Path                       string `json:"value"`
+	SequenceNumber             int         `json:"sequenceNumber"`
+	ConversationSequenceNumber int         `json:"conversationSequenceNumber"`
+	Participant                Participant `json:"-"`
+	ContentType                string      `json:"contentType"`
+	Path                       string      `json:"value"`
 }
 
 // GetType returns the type of this event
@@ -37,4 +35,22 @@ func (event FileEvent) MarshalJSON() ([]byte, error) {
 		event.GetType(),
 	})
 	return payload, errors.JSONMarshalError.Wrap(err)
+}
+
+// UnmarshalJSON decodes JSON
+func (event *FileEvent) UnmarshalJSON(payload []byte) (err error) {
+	type surrogate FileEvent
+	var inner struct {
+		surrogate
+	}
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
+	*event = FileEvent(inner.surrogate)
+
+	// Capture the participant from the same payload
+	if err = json.Unmarshal(payload, &event.Participant); err != nil {
+		return errors.JSONUnmarshalError.Wrap(err)
+	}
+	return
 }
