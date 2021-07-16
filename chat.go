@@ -1,6 +1,7 @@
 package iwt
 
 import (
+	"net/url"
 	"strings"
 	"time"
 
@@ -186,6 +187,11 @@ func (chat *Chat) SendMessage(text, contentType string) error {
 	}
 	go chat.processEvents(results.Chat.Events)
 	return results.Chat.Status.Param("id", chat.ID).AsError()
+}
+
+// GetFileURL tells the Download URL for the given file path
+func (chat Chat) GetFileURL(path string) *url.URL {
+	return chat.Client.URLWithPath(strings.TrimPrefix(path, "/websvcs"))
 }
 
 // GetFile download a file sent by an agent
