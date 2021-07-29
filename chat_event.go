@@ -51,7 +51,7 @@ func (wrapper *chatEventWrapper) UnmarshalJSON(payload []byte) (err error) {
 	if valueType, found := registry[header.Type]; found {
 		value = reflect.New(valueType).Interface().(ChatEvent)
 	} else {
-		return errors.JSONUnmarshalError.Wrap(errors.Unsupported.With("type", header.Type).WithStack())
+		return errors.JSONUnmarshalError.Wrap(errors.Unsupported.With("type", header.Type))
 	}
 	if err = json.Unmarshal(payload, &value); err != nil {
 		return
