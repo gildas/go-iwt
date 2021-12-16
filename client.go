@@ -100,7 +100,7 @@ func (client *Client) URLWithPath(path string) *url.URL {
 	return endpoint
 }
 
-func (client *Client) post(path string, payload, results interface{}) (*request.ContentReader, error) {
+func (client *Client) post(path string, payload, results interface{}) (*request.Content, error) {
 	return request.Send(&request.Options{
 		Context:   client.Context,
 		Method:    http.MethodPost,
@@ -111,7 +111,7 @@ func (client *Client) post(path string, payload, results interface{}) (*request.
 	}, results)
 }
 
-func (client *Client) get(path string, results interface{}) (*request.ContentReader, error) {
+func (client *Client) get(path string, results interface{}) (*request.Content, error) {
 	return request.Send(&request.Options{
 		Context:   client.Context,
 		URL:       client.URLWithPath(path),
