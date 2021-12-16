@@ -195,7 +195,7 @@ func (chat Chat) GetFileURL(path string) *url.URL {
 }
 
 // GetFile download a file sent by an agent
-func (chat *Chat) GetFile(path string) (reader *request.ContentReader, err error) {
+func (chat *Chat) GetFile(path string) (reader *request.Content, err error) {
 	log := chat.Logger.Scope("getfile")
 	if len(chat.ID) == 0 {
 		log.Errorf("chat is not connected")
