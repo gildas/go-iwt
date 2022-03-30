@@ -1,8 +1,9 @@
 package iwt
 
 import (
-	"errors"
 	"strings"
+
+	"github.com/gildas/go-errors"
 )
 
 // QueueType defines the type of Queue
@@ -33,7 +34,7 @@ func (queueType *QueueType) UnmarshalJSON(payload []byte) (err error) {
 	case "station":
 		*queueType = StationQueue
 	default:
-		return errors.New("Invalid QueueType: " + unquoted)
+		return errors.InvalidType.With("queueType", unquoted)
 	}
 	return nil
 }
