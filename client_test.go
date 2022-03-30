@@ -12,6 +12,7 @@ import (
 	"github.com/gildas/go-core"
 	"github.com/gildas/go-iwt"
 	"github.com/gildas/go-logger"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -80,6 +81,7 @@ func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 // Suite Tools
 
 func (suite *IWTTestSuite) SetupSuite() {
+	_ = godotenv.Load()
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
 	suite.Logger = logger.Create("test",
 		&logger.FileStream{
