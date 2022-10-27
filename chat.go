@@ -250,7 +250,7 @@ func (chat *Chat) startPollingMessages() {
 				_, err := chat.Client.get("/chat/poll/"+chat.Participants[0].ID, &results)
 				if err == StatusUnavailableService.AsError() && len(chat.Client.APIEndpoints) > 1 {
 					log.Warnf("A Switchover happened!")
-					if err =chat.Reconnect(); err != nil {
+					if err = chat.Reconnect(); err != nil {
 						log.Errorf("Failed to reconnect to backup server")
 					}
 					continue

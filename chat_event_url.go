@@ -10,9 +10,9 @@ import (
 
 // URLEvent describes the Text event
 type URLEvent struct {
-	SequenceNumber  int         `json:"sequenceNumber"`
-	Participant     Participant `json:"-"`
-	URL             *url.URL    `json:"-"`
+	SequenceNumber int         `json:"sequenceNumber"`
+	Participant    Participant `json:"-"`
+	URL            *url.URL    `json:"-"`
 }
 
 // GetType returns the type of this event

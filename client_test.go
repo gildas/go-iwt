@@ -28,6 +28,58 @@ func TestIWTSuite(t *testing.T) {
 	suite.Run(t, new(IWTTestSuite))
 }
 
+// *****************************************************************************
+// Suite Tools
+
+func (suite *IWTTestSuite) SetupSuite() {
+	_ = godotenv.Load()
+	suite.Name = strings.TrimSuffix(reflect.TypeOf(suite).Elem().Name(), "Suite")
+	suite.Logger = logger.Create("test",
+		&logger.FileStream{
+			Path:         fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:   true,
+			SourceInfo:   true,
+			FilterLevels: logger.NewLevelSet(logger.TRACE),
+		},
+	).Child("test", "test")
+
+	primaryAPI, err := url.Parse(core.GetEnvAsString("PRIMARY", ""))
+	suite.Require().Nil(err, "Failed to parse Primary PureConnect URL")
+
+	suite.Client = iwt.NewClient(context.Background(), iwt.ClientOptions{
+		PrimaryAPI: primaryAPI,
+		Logger:     suite.Logger,
+	})
+	suite.Require().NotNil(suite.Client, "Failed to instantiate a new IWT Client")
+
+	suite.Logger.Infof("Suite Start %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
+}
+
+func (suite *IWTTestSuite) TearDownSuite() {
+	if suite.T().Failed() {
+		suite.Logger.Warnf("At least one test failed, we are not cleaning")
+		suite.T().Log("At least one test failed, we are not cleaing")
+	} else {
+		suite.Logger.Infof("Cleaning all data from %s", suite.Name)
+		//err := suite.Provider.PurgeAll(nil, suite.Logger)
+		//suite.Nil(err, "Failed to clean data. %s", err)
+	}
+	suite.Logger.Infof("Suite End %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
+	suite.Logger.Close()
+}
+
+func (suite *IWTTestSuite) BeforeTest(suiteName, testName string) {
+	suite.Logger.Infof("Test Start %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
+	suite.Start = time.Now()
+}
+
+func (suite *IWTTestSuite) AfterTest(suiteName, testName string) {
+	duration := time.Since(suite.Start)
+	suite.Logger.Record("duration", duration.String()).Infof("Test End %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
+}
+
+// *****************************************************************************
+
 func (suite *IWTTestSuite) TestCanInstantiate() {
 	suite.Require().NotEmpty(suite.Client.APIEndpoints, "Missing API endpoints")
 	suite.Require().NotNil(suite.Client.APIEndpoints[0], "Primary API endpoint should not be nil")
@@ -76,52 +128,4 @@ func (suite *IWTTestSuite) TestCanStartAndStopChat() {
 	time.Sleep(5 * time.Second)
 	err = chat.Stop()
 	suite.Require().Nil(err, "Failed to stop a chat, Error: %s", err)
-}
-
-// Suite Tools
-
-func (suite *IWTTestSuite) SetupSuite() {
-	_ = godotenv.Load()
-	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
-	suite.Logger = logger.Create("test",
-		&logger.FileStream{
-			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
-			Unbuffered:  true,
-			FilterLevel: logger.TRACE,
-		},
-	).Child("test", "test")
-
-	primaryAPI, err := url.Parse(core.GetEnvAsString("PRIMARY", ""))
-	suite.Require().Nil(err, "Failed to parse Primary PureConnect URL")
-
-	suite.Client = iwt.NewClient(context.Background(), iwt.ClientOptions{
-		PrimaryAPI: primaryAPI,
-		Logger:     suite.Logger,
-	})
-	suite.Require().NotNil(suite.Client, "Failed to instantiate a new IWT Client")
-
-	suite.Logger.Infof("Suite Start %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
-}
-
-func (suite *IWTTestSuite) TearDownSuite() {
-	if suite.T().Failed() {
-		suite.Logger.Warnf("At least one test failed, we are not cleaning")
-		suite.T().Log("At least one test failed, we are not cleaing")
-	} else {
-		suite.Logger.Infof("Cleaning all data from %s", suite.Name)
-		//err := suite.Provider.PurgeAll(nil, suite.Logger)
-		//suite.Nil(err, "Failed to clean data. %s", err)
-	}
-	suite.Logger.Infof("Suite End %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
-	suite.Logger.Close()
-}
-
-func (suite *IWTTestSuite) BeforeTest(suiteName, testName string) {
-	suite.Logger.Infof("Test Start %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
-	suite.Start = time.Now()
-}
-
-func (suite *IWTTestSuite) AfterTest(suiteName, testName string) {
-	duration := time.Since(suite.Start)
-	suite.Logger.Record("duration", duration.String()).Infof("Test End %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
 }

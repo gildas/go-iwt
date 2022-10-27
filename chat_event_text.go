@@ -37,7 +37,6 @@ func (event TextEvent) MarshalJSON() ([]byte, error) {
 	return payload, errors.JSONMarshalError.Wrap(err)
 }
 
-
 // UnmarshalJSON decodes JSON
 func (event *TextEvent) UnmarshalJSON(payload []byte) (err error) {
 	type surrogate TextEvent
